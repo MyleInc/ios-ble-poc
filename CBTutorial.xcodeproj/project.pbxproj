@@ -15,24 +15,9 @@
 		6399F367180EF944005E5EE8 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 6399F366180EF944005E5EE8 /* AppDelegate.m */; };
 		6399F36A180EF944005E5EE8 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6399F368180EF944005E5EE8 /* Main.storyboard */; };
 		6399F36F180EF944005E5EE8 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6399F36E180EF944005E5EE8 /* Images.xcassets */; };
-		6399F376180EF944005E5EE8 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6399F375180EF944005E5EE8 /* XCTest.framework */; };
-		6399F377180EF944005E5EE8 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6399F356180EF944005E5EE8 /* Foundation.framework */; };
-		6399F378180EF944005E5EE8 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6399F35A180EF944005E5EE8 /* UIKit.framework */; };
-		6399F380180EF944005E5EE8 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 6399F37E180EF944005E5EE8 /* InfoPlist.strings */; };
-		6399F382180EF944005E5EE8 /* CBTutorialTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6399F381180EF944005E5EE8 /* CBTutorialTests.m */; };
 		6399F38D180EF9E8005E5EE8 /* CBCentralManagerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 6399F38C180EF9E8005E5EE8 /* CBCentralManagerViewController.m */; };
 		639ACC84180EFBDC001F8505 /* CoreBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 639ACC83180EFBDC001F8505 /* CoreBluetooth.framework */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-		6399F379180EF944005E5EE8 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 6399F34B180EF944005E5EE8 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 6399F352180EF944005E5EE8;
-			remoteInfo = CBTutorial;
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		6399F353180EF944005E5EE8 /* BLE Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "BLE Demo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -47,7 +32,6 @@
 		6399F366180EF944005E5EE8 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		6399F369180EF944005E5EE8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		6399F36E180EF944005E5EE8 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
-		6399F374180EF944005E5EE8 /* CBTutorialTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CBTutorialTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6399F375180EF944005E5EE8 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		6399F37D180EF944005E5EE8 /* CBTutorialTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "CBTutorialTests-Info.plist"; sourceTree = "<group>"; };
 		6399F37F180EF944005E5EE8 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -70,16 +54,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		6399F371180EF944005E5EE8 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				6399F376180EF944005E5EE8 /* XCTest.framework in Frameworks */,
-				6399F378180EF944005E5EE8 /* UIKit.framework in Frameworks */,
-				6399F377180EF944005E5EE8 /* Foundation.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -97,7 +71,6 @@
 			isa = PBXGroup;
 			children = (
 				6399F353180EF944005E5EE8 /* BLE Demo.app */,
-				6399F374180EF944005E5EE8 /* CBTutorialTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -178,24 +151,6 @@
 			productReference = 6399F353180EF944005E5EE8 /* BLE Demo.app */;
 			productType = "com.apple.product-type.application";
 		};
-		6399F373180EF944005E5EE8 /* CBTutorialTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 6399F388180EF944005E5EE8 /* Build configuration list for PBXNativeTarget "CBTutorialTests" */;
-			buildPhases = (
-				6399F370180EF944005E5EE8 /* Sources */,
-				6399F371180EF944005E5EE8 /* Frameworks */,
-				6399F372180EF944005E5EE8 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				6399F37A180EF944005E5EE8 /* PBXTargetDependency */,
-			);
-			name = CBTutorialTests;
-			productName = CBTutorialTests;
-			productReference = 6399F374180EF944005E5EE8 /* CBTutorialTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -206,11 +161,7 @@
 				ORGANIZATIONNAME = Mobiletuts;
 				TargetAttributes = {
 					6399F352180EF944005E5EE8 = {
-						DevelopmentTeam = 3K7G9X4S5C;
-					};
-					6399F373180EF944005E5EE8 = {
-						DevelopmentTeam = 3K7G9X4S5C;
-						TestTargetID = 6399F352180EF944005E5EE8;
+						DevelopmentTeam = A9Y4D5WEPV;
 					};
 				};
 			};
@@ -228,7 +179,6 @@
 			projectRoot = "";
 			targets = (
 				6399F352180EF944005E5EE8 /* CBTutorial */,
-				6399F373180EF944005E5EE8 /* CBTutorialTests */,
 			);
 		};
 /* End PBXProject section */
@@ -241,14 +191,6 @@
 				6399F36F180EF944005E5EE8 /* Images.xcassets in Resources */,
 				6399F361180EF944005E5EE8 /* InfoPlist.strings in Resources */,
 				6399F36A180EF944005E5EE8 /* Main.storyboard in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		6399F372180EF944005E5EE8 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				6399F380180EF944005E5EE8 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -265,23 +207,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		6399F370180EF944005E5EE8 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				6399F382180EF944005E5EE8 /* CBTutorialTests.m in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		6399F37A180EF944005E5EE8 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 6399F352180EF944005E5EE8 /* CBTutorial */;
-			targetProxy = 6399F379180EF944005E5EE8 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		6399F35F180EF944005E5EE8 /* InfoPlist.strings */ = {
@@ -415,48 +341,6 @@
 			};
 			name = Release;
 		};
-		6399F389180EF944005E5EE8 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/CBTutorial.app/CBTutorial";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(SDKROOT)/Developer/Library/Frameworks",
-					"$(inherited)",
-					"$(DEVELOPER_FRAMEWORKS_DIR)",
-				);
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "CBTutorial/CBTutorial-Prefix.pch";
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				INFOPLIST_FILE = "CBTutorialTests/CBTutorialTests-Info.plist";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUNDLE_LOADER)";
-				WRAPPER_EXTENSION = xctest;
-			};
-			name = Debug;
-		};
-		6399F38A180EF944005E5EE8 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/CBTutorial.app/CBTutorial";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(SDKROOT)/Developer/Library/Frameworks",
-					"$(inherited)",
-					"$(DEVELOPER_FRAMEWORKS_DIR)",
-				);
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "CBTutorial/CBTutorial-Prefix.pch";
-				INFOPLIST_FILE = "CBTutorialTests/CBTutorialTests-Info.plist";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUNDLE_LOADER)";
-				WRAPPER_EXTENSION = xctest;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -474,15 +358,6 @@
 			buildConfigurations = (
 				6399F386180EF944005E5EE8 /* Debug */,
 				6399F387180EF944005E5EE8 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		6399F388180EF944005E5EE8 /* Build configuration list for PBXNativeTarget "CBTutorialTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				6399F389180EF944005E5EE8 /* Debug */,
-				6399F38A180EF944005E5EE8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

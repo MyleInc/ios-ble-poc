@@ -161,7 +161,7 @@
 				ORGANIZATIONNAME = Mobiletuts;
 				TargetAttributes = {
 					6399F352180EF944005E5EE8 = {
-						DevelopmentTeam = A9Y4D5WEPV;
+						DevelopmentTeam = 3K7G9X4S5C;
 					};
 				};
 			};

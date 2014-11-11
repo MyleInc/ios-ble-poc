@@ -20,25 +20,53 @@
 
 // Scan periphrals with specific service UUID
 - (void) scanPeripherals {
-    [_centralManager scanForPeripheralsWithServices:nil options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
-    
-    [self log:@"Scanning started"];
+    switch (_centralManager.state)
+    {
+        case CBCentralManagerStateUnsupported:
+        {
+            NSLog(@"State: Unsupported");
+        } break;
+            
+        case CBCentralManagerStateUnauthorized:
+        {
+            NSLog(@"State: Unauthorized");
+        } break;
+            
+        case CBCentralManagerStatePoweredOff:
+        {
+            NSLog(@"State: Powered Off");
+        } break;
+            
+        case CBCentralManagerStatePoweredOn:
+        {
+            NSLog(@"State: Powered On");
+           [_centralManager scanForPeripheralsWithServices:@[[CBUUID UUIDWithString:SERVICE_UUID]] options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
+            //[_centralManager scanForPeripheralsWithServices:nil options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
+            [self log:@"Scanning started"];
+        } break;
+            
+        case CBCentralManagerStateUnknown:
+        {
+            NSLog(@"State: Unknown");
+        } break;
+            
+        default:
+        {
+        }
+    }
 }
 
 // Scan peripherals
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central {
-    // You should test all scenarios
-    if (central.state != CBCentralManagerStatePoweredOn) {
-        return;
-    }
-    
-    if (central.state == CBCentralManagerStatePoweredOn) {
-        [self scanPeripherals];
-    }
+    [self scanPeripherals];
 }
 
 //Scan success
 - (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI {
+    
+    //NSLog(@"%@", central);
+    //NSLog(@"%@", peripheral);
+    //[self log:advertisementData];
     
     //[self log:[NSString stringWithFormat:@"DATA=\"%@\"", advertisementData]];
     
@@ -266,11 +294,7 @@
     _PeripheralUUID = @"";
     
     // Scan for devices again
-    if (central.state == CBCentralManagerStatePoweredOn)
-    {
-        [_centralManager scanForPeripheralsWithServices:nil options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
-        [self log:@"Scanning started"];
-    }
+    [self scanPeripherals];
 }
 
 // Clean up

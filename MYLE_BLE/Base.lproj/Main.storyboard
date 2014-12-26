@@ -21,7 +21,7 @@
                                 <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                                 <subviews>
                                     <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="PLg-pt-Xp7">
-                                        <rect key="frame" x="8" y="85" width="191" height="30"/>
+                                        <rect key="frame" x="129" y="66" width="183" height="30"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                         <textInputTraits key="textInputTraits"/>
                                         <connections>
@@ -29,37 +29,19 @@
                                         </connections>
                                     </textField>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="RECLN" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="JGI-A6-sAf">
-                                        <rect key="frame" x="8" y="64" width="60" height="21"/>
+                                        <rect key="frame" x="8" y="70" width="60" height="21"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                         <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Inx-EJ-bdH">
-                                        <rect key="frame" x="218" y="85" width="46" height="30"/>
-                                        <state key="normal" title="Read">
-                                            <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="readRECLN:" destination="7ug-kD-9Lw" eventType="touchUpInside" id="5Qk-LC-wAc"/>
-                                        </connections>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="qLv-ZD-hUr">
-                                        <rect key="frame" x="266" y="85" width="46" height="30"/>
-                                        <state key="normal" title="Write">
-                                            <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="writeRECLN:" destination="7ug-kD-9Lw" eventType="touchUpInside" id="YEf-j3-2ok"/>
-                                        </connections>
-                                    </button>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="PAUSE_LEVEL" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SH8-1p-osQ">
-                                        <rect key="frame" x="8" y="123" width="116" height="21"/>
+                                        <rect key="frame" x="8" y="113" width="116" height="21"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                         <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="KLb-nZ-MxI">
-                                        <rect key="frame" x="8" y="142" width="191" height="30"/>
+                                        <rect key="frame" x="129" y="109" width="183" height="30"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                         <textInputTraits key="textInputTraits"/>
                                         <connections>
@@ -67,32 +49,14 @@
                                             <outlet property="delegate" destination="7ug-kD-9Lw" id="igC-N4-tcg"/>
                                         </connections>
                                     </textField>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="mPQ-kK-OR0">
-                                        <rect key="frame" x="218" y="141" width="46" height="30"/>
-                                        <state key="normal" title="Read">
-                                            <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="readPAUSE_LEVEL:" destination="7ug-kD-9Lw" eventType="touchUpInside" id="0t3-Zd-sKQ"/>
-                                        </connections>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="r3K-xi-JXG">
-                                        <rect key="frame" x="266" y="141" width="46" height="30"/>
-                                        <state key="normal" title="Write">
-                                            <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="writePAUSE_LEVEL:" destination="7ug-kD-9Lw" eventType="touchUpInside" id="fEK-ev-IkF"/>
-                                        </connections>
-                                    </button>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="PAUSE_LEN" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="wt0-Vq-J2a">
-                                        <rect key="frame" x="8" y="179" width="116" height="21"/>
+                                        <rect key="frame" x="8" y="151" width="116" height="21"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                         <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="IE4-jo-z6D">
-                                        <rect key="frame" x="8" y="199" width="191" height="30"/>
+                                        <rect key="frame" x="129" y="147" width="183" height="30"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                         <textInputTraits key="textInputTraits"/>
                                         <connections>
@@ -100,32 +64,14 @@
                                             <outlet property="delegate" destination="7ug-kD-9Lw" id="aUs-9A-x2B"/>
                                         </connections>
                                     </textField>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="UJT-UL-jzW">
-                                        <rect key="frame" x="218" y="198" width="46" height="30"/>
-                                        <state key="normal" title="Read">
-                                            <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="readPAUSE_LEN:" destination="7ug-kD-9Lw" eventType="touchUpInside" id="YJI-mM-rEF"/>
-                                        </connections>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Z4f-C6-ca7">
-                                        <rect key="frame" x="266" y="198" width="46" height="30"/>
-                                        <state key="normal" title="Write">
-                                            <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="writePAUSE_LEN:" destination="7ug-kD-9Lw" eventType="touchUpInside" id="mKY-hb-S6H"/>
-                                        </connections>
-                                    </button>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="ACCELER_SENS" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="GWv-Qu-f8L">
-                                        <rect key="frame" x="8" y="231" width="145" height="21"/>
+                                        <rect key="frame" x="8" y="190" width="145" height="21"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                         <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="x5X-H3-TAV">
-                                        <rect key="frame" x="8" y="251" width="191" height="30"/>
+                                        <rect key="frame" x="129" y="185" width="183" height="30"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                         <textInputTraits key="textInputTraits"/>
                                         <connections>
@@ -133,32 +79,14 @@
                                             <outlet property="delegate" destination="7ug-kD-9Lw" id="aB2-4k-dvE"/>
                                         </connections>
                                     </textField>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="lhd-co-Q4j">
-                                        <rect key="frame" x="218" y="250" width="46" height="30"/>
-                                        <state key="normal" title="Read">
-                                            <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="readACCELER_SENS:" destination="7ug-kD-9Lw" eventType="touchUpInside" id="TVt-Ly-yGl"/>
-                                        </connections>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Ieb-69-84O">
-                                        <rect key="frame" x="266" y="250" width="46" height="30"/>
-                                        <state key="normal" title="Write">
-                                            <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="writeACCELER_SENS:" destination="7ug-kD-9Lw" eventType="touchUpInside" id="Qu6-Fv-tqF"/>
-                                        </connections>
-                                    </button>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="MIC" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="wQd-sQ-uZW">
-                                        <rect key="frame" x="8" y="288" width="145" height="21"/>
+                                        <rect key="frame" x="8" y="227" width="145" height="21"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                         <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="xsK-Du-EGg">
-                                        <rect key="frame" x="8" y="307" width="191" height="30"/>
+                                        <rect key="frame" x="129" y="223" width="183" height="30"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                         <textInputTraits key="textInputTraits"/>
                                         <connections>
@@ -166,32 +94,14 @@
                                             <outlet property="delegate" destination="7ug-kD-9Lw" id="uoO-9O-qqw"/>
                                         </connections>
                                     </textField>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="sFV-qF-XRI">
-                                        <rect key="frame" x="218" y="306" width="46" height="30"/>
-                                        <state key="normal" title="Read">
-                                            <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="readMIC:" destination="7ug-kD-9Lw" eventType="touchUpInside" id="Njf-9o-5Hy"/>
-                                        </connections>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Vy1-x0-Ebs">
-                                        <rect key="frame" x="266" y="306" width="46" height="30"/>
-                                        <state key="normal" title="Write">
-                                            <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="writeMIC:" destination="7ug-kD-9Lw" eventType="touchUpInside" id="xaB-ZV-Uyf"/>
-                                        </connections>
-                                    </button>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="PASSWORD" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="LeU-6q-wqJ">
-                                        <rect key="frame" x="8" y="345" width="145" height="21"/>
+                                        <rect key="frame" x="8" y="266" width="145" height="21"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                         <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="gFd-Ar-bsU">
-                                        <rect key="frame" x="8" y="365" width="191" height="30"/>
+                                        <rect key="frame" x="129" y="261" width="183" height="30"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                         <textInputTraits key="textInputTraits"/>
                                         <connections>
@@ -199,32 +109,14 @@
                                             <outlet property="delegate" destination="7ug-kD-9Lw" id="hya-f1-pHE"/>
                                         </connections>
                                     </textField>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="OqO-cY-7AF">
-                                        <rect key="frame" x="218" y="364" width="46" height="30"/>
-                                        <state key="normal" title="Read">
-                                            <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="readPASSWORD:" destination="7ug-kD-9Lw" eventType="touchUpInside" id="Y8x-UI-Oe1"/>
-                                        </connections>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="C7O-dD-LPI">
-                                        <rect key="frame" x="266" y="364" width="46" height="30"/>
-                                        <state key="normal" title="Write">
-                                            <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="writePASSWORD:" destination="7ug-kD-9Lw" eventType="touchUpInside" id="r7S-rR-sN7"/>
-                                        </connections>
-                                    </button>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="BTLOC" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ijU-eZ-BXV">
-                                        <rect key="frame" x="8" y="403" width="145" height="21"/>
+                                        <rect key="frame" x="8" y="303" width="145" height="21"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                         <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="ccG-FD-hfR">
-                                        <rect key="frame" x="8" y="424" width="191" height="30"/>
+                                        <rect key="frame" x="129" y="299" width="183" height="30"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                         <textInputTraits key="textInputTraits"/>
                                         <connections>
@@ -232,15 +124,51 @@
                                             <outlet property="delegate" destination="7ug-kD-9Lw" id="evK-4v-Yaa"/>
                                         </connections>
                                     </textField>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="rkw-rD-CHz">
-                                        <rect key="frame" x="218" y="428" width="46" height="30"/>
-                                        <state key="normal" title="Read">
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="UUID" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="WOp-w2-w5f">
+                                        <rect key="frame" x="8" y="342" width="145" height="21"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                                        <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="VERSION" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3EL-YB-Osl">
+                                        <rect key="frame" x="8" y="400" width="145" height="21"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                                        <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="0Nk-19-LVD">
+                                        <rect key="frame" x="129" y="395" width="183" height="30"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                        <textInputTraits key="textInputTraits"/>
+                                        <connections>
+                                            <action selector="tfExit:" destination="7ug-kD-9Lw" eventType="editingDidEndOnExit" id="vk3-0A-kHO"/>
+                                            <outlet property="delegate" destination="7ug-kD-9Lw" id="PUS-2w-Zj7"/>
+                                        </connections>
+                                    </textField>
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="qPl-sf-qcF">
+                                        <rect key="frame" x="172" y="438" width="63" height="30"/>
+                                        <state key="normal" title="Read All">
                                             <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                         </state>
                                         <connections>
-                                            <action selector="readBTLOC:" destination="7ug-kD-9Lw" eventType="touchUpInside" id="GJS-Pg-qRg"/>
+                                            <action selector="readAll:" destination="7ug-kD-9Lw" eventType="touchUpInside" id="c9K-ze-IKq"/>
                                         </connections>
                                     </button>
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="4PL-ZQ-CAW">
+                                        <rect key="frame" x="251" y="438" width="61" height="30"/>
+                                        <state key="normal" title="Write All">
+                                            <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                                        </state>
+                                        <connections>
+                                            <action selector="writeAll:" destination="7ug-kD-9Lw" eventType="touchUpInside" id="Mi3-8F-QKU"/>
+                                        </connections>
+                                    </button>
+                                    <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="SfA-Gd-4bA">
+                                        <rect key="frame" x="129" y="337" width="183" height="50"/>
+                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                        <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
+                                    </textView>
                                 </subviews>
                             </scrollView>
                         </subviews>
@@ -248,19 +176,8 @@
                     </view>
                     <navigationItem key="navigationItem" id="eG5-vv-bZC"/>
                     <connections>
-                        <outlet property="btReadACCELER_SENS" destination="lhd-co-Q4j" id="Idq-36-ZzE"/>
-                        <outlet property="btReadBTLOC" destination="rkw-rD-CHz" id="Yxf-wo-RJ5"/>
-                        <outlet property="btReadMIC" destination="sFV-qF-XRI" id="kC5-i7-luk"/>
-                        <outlet property="btReadPASSWORD" destination="OqO-cY-7AF" id="CvQ-d7-Dm5"/>
-                        <outlet property="btReadPAUSE_LEN" destination="UJT-UL-jzW" id="9jE-HC-6p6"/>
-                        <outlet property="btReadPAUSE_LEVEL" destination="mPQ-kK-OR0" id="zP8-Mx-EGR"/>
-                        <outlet property="btReadRECLN" destination="Inx-EJ-bdH" id="Im2-SJ-q7x"/>
-                        <outlet property="btWriteACCELER_SENS" destination="Ieb-69-84O" id="5cX-LE-HzJ"/>
-                        <outlet property="btWriteMIC" destination="Vy1-x0-Ebs" id="XYa-jI-hUW"/>
-                        <outlet property="btWritePASSWORD" destination="C7O-dD-LPI" id="Wa0-Ax-rGZ"/>
-                        <outlet property="btWritePAUSE_LEN" destination="Z4f-C6-ca7" id="BQk-OE-t52"/>
-                        <outlet property="btWritePAUSE_LEVEL" destination="r3K-xi-JXG" id="oDt-YO-iB4"/>
-                        <outlet property="btWriteRECLN" destination="qLv-ZD-hUr" id="zhx-DB-W0P"/>
+                        <outlet property="btReadAll" destination="qPl-sf-qcF" id="b04-JB-LIf"/>
+                        <outlet property="btWriteAll" destination="4PL-ZQ-CAW" id="E8p-lf-7iU"/>
                         <outlet property="scrollView" destination="c8d-nG-lTj" id="Ilk-dR-rZ8"/>
                         <outlet property="tfACCELER_SENS" destination="x5X-H3-TAV" id="JIM-hO-Jqn"/>
                         <outlet property="tfBTLOC" destination="ccG-FD-hfR" id="id2-jG-iyk"/>
@@ -269,6 +186,8 @@
                         <outlet property="tfPAUSE_LEN" destination="IE4-jo-z6D" id="dCu-WA-Vs2"/>
                         <outlet property="tfPAUSE_LEVEL" destination="KLb-nZ-MxI" id="g5f-yp-1VJ"/>
                         <outlet property="tfRECLN" destination="PLg-pt-Xp7" id="HDE-uq-bhg"/>
+                        <outlet property="tfVERSION" destination="0Nk-19-LVD" id="nxl-5G-tnf"/>
+                        <outlet property="tvUUID" destination="SfA-Gd-4bA" id="YHz-yd-yQU"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1hP-6b-Rfd" userLabel="First Responder" sceneMemberID="firstResponder"/>

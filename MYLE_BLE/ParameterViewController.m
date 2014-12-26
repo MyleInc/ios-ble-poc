@@ -427,6 +427,27 @@
     return data;
 }
 
+- (NSData *)makeReadVERSION {
+    NSData *data;
+    
+    Byte *byteData = (Byte*)malloc(11);
+    byteData[0] = [@"5" characterAtIndex:0];
+    byteData[1] = [@"5" characterAtIndex:0];
+    byteData[2] = [@"0" characterAtIndex:0];
+    byteData[3] = [@"3" characterAtIndex:0];
+    byteData[4] = [@"V" characterAtIndex:0];
+    byteData[5] = [@"E" characterAtIndex:0];
+    byteData[6] = [@"R" characterAtIndex:0];
+    byteData[7] = [@"S" characterAtIndex:0];
+    byteData[8] = [@"I" characterAtIndex:0];
+    byteData[9] = [@"O" characterAtIndex:0];
+    byteData[10] = [@"N" characterAtIndex:0];
+    
+    data = [NSData dataWithBytes:byteData length:11];
+    
+    return data;
+}
+
 // Format String to match number of bytes
 - (NSString *) formatString:(NSString *)data numberDigit: (NSUInteger)num {
     if (data.length == num) return data;
@@ -479,4 +500,59 @@
     self.scrollView.contentOffset = CGPointMake(0, 64);
 }
 
+- (void) didReceiveVERSION: (NSString *) value {
+    NSLog(@"OK = \"%@\"", value);
+    self.tfVERSION.text = value;
+}
+
+- (IBAction)readAll:(id)sender {
+    NSData *data;
+
+    data = [self makeReadRECLN];
+    [self send:data];
+    
+    data = [self makeReadPAUSELEVEL];
+    [self send:data];
+    
+    data = [self makeReadPAUSELEN];
+    [self send:data];
+
+    data = [self makeReadACCELERSENS];
+    [self send:data];
+
+    data = [self makeReadMIC];
+    [self send:data];
+    
+    data = [self makeReadBTLOC];
+    [self send:data];
+    
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSString *pass = [defaults valueForKey:@"PASSWORD"];
+    if (pass == nil) pass = @"1234abcd";
+    self.tfPASSWORD.text = pass;
+    
+    self.tvUUID.text = [NSString stringWithFormat:@"%@", [[[self->peripheral services] objectAtIndex:0] UUID]];
+    
+    data = [self makeReadVERSION];
+    [self send:data];
+}
+
+- (IBAction)writeAll:(id)sender {
+    NSData *data;
+    
+    data = [self makeUpdateRECLN:[self formatString:[self.tfRECLN text] numberDigit:2]];
+    [self send:data];
+    
+    data = [self makeUpdatePAUSELEVEL:[self formatString:[self.tfPAUSE_LEVEL text] numberDigit:3]];
+    [self send:data];
+    
+    data = [self makeUpdatePAUSELEN:[self formatString:[self.tfPAUSE_LEN text] numberDigit:2]];
+    [self send:data];
+    
+    data = [self makeUpdateACCELERSENS:[self formatString:[self.tfACCELER_SENS text] numberDigit:3]];
+    [self send:data];
+    
+    data = [self makeUpdateMIC:[self formatString:[self.tfMIC text] numberDigit:3]];
+    [self send:data];
+}
 @end

@@ -480,8 +480,6 @@
     NSLog(@"data =  %@", data);
     Byte *byteData = (Byte*)malloc(3);
     
-    NSLog(@"delegate = %@", delegate);
-    
     if (!([string rangeOfString:@"5503RECLN"].location == NSNotFound))
     {
         [data getBytes:byteData range:NSMakeRange(@"5503RECLN".length, data.length-@"5503RECLN".length)];
@@ -529,6 +527,17 @@
         str = @"MIC";
         value = [self getFromBytes:byteData];
         [self.delegate didReceiveMIC:value];
+    }
+    else if (!([string rangeOfString:@"5503VERSION"].location == NSNotFound))
+    {
+        Byte *versionData = (Byte*)malloc(20);
+        
+        [data getBytes:versionData range:NSMakeRange(@"5503VERSION".length + 1, data.length-@"5503VERSION".length - 1)];
+        ret = true;
+        str = @"VERSION";
+        NSLog(@"%d", versionData[0]);
+        [self.delegate didReceiveVERSION:[NSString stringWithUTF8String:versionData]];
+         
     }
     else if (!([string rangeOfString:@"CONNECTED"].location == NSNotFound))
     {

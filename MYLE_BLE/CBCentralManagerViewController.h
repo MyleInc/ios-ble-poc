@@ -20,6 +20,7 @@
     - (void) didReceiveACCELER_SENS: (NSUInteger) value;
     - (void) didReceiveMIC: (NSUInteger) value;
     - (void) didReceiveBTLOC: (NSUInteger) value;
+    - (void) didReceiveVERSION: (NSString *) value;
 @end
 
 @interface CBCentralManagerViewController : UIViewController < CBCentralManagerDelegate, CBPeripheralDelegate>

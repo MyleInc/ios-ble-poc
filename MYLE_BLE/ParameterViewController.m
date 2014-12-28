@@ -526,12 +526,16 @@
     data = [self makeReadBTLOC];
     [self send:data];
     
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    NSString *pass = [defaults valueForKey:@"PASSWORD"];
-    if (pass == nil) pass = @"1234abcd";
-    self.tfPASSWORD.text = pass;
-    
-    self.tvUUID.text = [NSString stringWithFormat:@"%@", [[[self->peripheral services] objectAtIndex:0] UUID]];
+    if (self->peripheral != nil) {
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        NSString *pass = [defaults valueForKey:@"PASSWORD"];
+        if (pass == nil) pass = @"1234abcd";
+        self.tfPASSWORD.text = pass;
+        
+        self.tvUUID.text = [NSString stringWithFormat:@"%@", [[[self->peripheral services] objectAtIndex:0] UUID]];
+    } else {
+        NSLog(@"Board not found");
+    }
     
     data = [self makeReadVERSION];
     [self send:data];

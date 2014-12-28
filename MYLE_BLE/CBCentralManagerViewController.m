@@ -352,7 +352,7 @@
     else if (_data.length < _dataLength)
     {
         [_data appendData:characteristic.value];
-        NSLog(@"len = %d", _data.length);
+        //NSLog(@"len = %d", _data.length);
         
         if (_data.length == _dataLength)
         {
@@ -477,7 +477,10 @@
     NSUInteger value = 0;
     
     NSString* string = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    NSLog(@"data =  %@", data);
+    
+    // Audio header
+    if (string == nil) return false;
+    
     Byte *byteData = (Byte*)malloc(3);
     
     if (!([string rangeOfString:@"5503RECLN"].location == NSNotFound))
@@ -551,7 +554,7 @@
     
     //[self log:[NSString stringWithFormat:@"%@ = %d", str, value]];
     
-    //NSLog([NSString stringWithFormat:@"%@ = %d", str, value]);
+    NSLog(@"ret = %d", ret);
     return ret;
 }
 

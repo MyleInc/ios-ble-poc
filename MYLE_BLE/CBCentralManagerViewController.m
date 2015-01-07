@@ -410,6 +410,8 @@
 {
     _discoveredPeripheral = nil;
     _PeripheralUUID = @"";
+    _dataLength = 0;
+    isReceivingAudioFile = false;
     
     // Scan for devices again
     if (central.state == CBCentralManagerStatePoweredOn)

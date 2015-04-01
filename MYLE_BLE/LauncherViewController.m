@@ -68,17 +68,21 @@
     [sender resignFirstResponder];
 }
 
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
-{
-    // Make sure your segue name in storyboard is the same as this line
-    if ([[segue identifier] isEqualToString:@"BLE"])
-    {
-        // Get reference to the destination view controller
-       CBCentralManagerViewController *vc = [segue destinationViewController];
-        
-        // Pass any objects to the view controller here, like...
-        [vc setInitialPassword:self.tfPassword.text];
+- (IBAction)start:(id)sender {
+    // Set  password
+    BluetoothManager *bluetoothManager = [BluetoothManager createInstance];
+    [bluetoothManager setInitialPassword:self.tfPassword.text];
+    
+    // Check if have connected
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSString *uuid = [defaults valueForKey:@"PERIPHERAL_UUID"];
+    
+    if (nil == uuid) {
+         [self performSegueWithIdentifier:@"scan_segue" sender:self];
+    } else {
+        [self performSegueWithIdentifier:@"connect_segue_2" sender:self];
     }
 }
+
 
 @end

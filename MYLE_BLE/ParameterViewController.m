@@ -27,18 +27,16 @@
 @implementation ParameterViewController {
     CBPeripheral *peripheral;
     CBCentralManagerViewController *centralViewController;
+    BluetoothManager *bluetoothManager;
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
     
-    // Set title Navigation ControlBar
-    UINavigationController *navCon  = (UINavigationController*) [self.navigationController.viewControllers objectAtIndex:2];
-    navCon.navigationItem.title = @"Parameter";
-    
-    //Set delegate
-    centralViewController.delegate = self;
+    // Set delegate
+    bluetoothManager = [BluetoothManager createInstance];
+    bluetoothManager.parameterDelegate = self;
 }
 
 // Solve topbar hide content
@@ -55,11 +53,6 @@
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
-}
-
-- (void) setPeripheral: (CBCentralManagerViewController *)viewcontroller peripheral: (CBPeripheral *)_peripheral{
-    self->centralViewController = viewcontroller;
-    self->peripheral = _peripheral;
 }
 
 - (IBAction)tfExit:(id)sender {
@@ -145,7 +138,7 @@
 
 
 - (void) send: (NSData *) data {
-    [self->peripheral writeValue:data forCharacteristic:[[[self->peripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
+    [bluetoothManager send:data];
 }
 
 /************ UPDATE PARAMETER ****************/
@@ -526,13 +519,13 @@
     data = [self makeReadBTLOC];
     [self send:data];
     
-    if (self->peripheral != nil) {
+    if (nil != bluetoothManager) {
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
         NSString *pass = [defaults valueForKey:@"PASSWORD"];
         if (pass == nil) pass = @"1234abcd";
         self.tfPASSWORD.text = pass;
         
-        self.tvUUID.text = [NSString stringWithFormat:@"%@", [[[self->peripheral services] objectAtIndex:0] UUID]];
+        self.tvUUID.text = [bluetoothManager getPeripheralUUID];
     } else {
         NSLog(@"Board not found");
     }
@@ -559,4 +552,17 @@
     data = [self makeUpdateMIC:[self formatString:[self.tfMIC text] numberDigit:3]];
     [self send:data];
 }
+- (IBAction)clickReset:(id)sender {
+    // Forget this device
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [defaults setValue:nil forKey:@"PERIPHERAL_UUID"];
+    [defaults synchronize];
+    
+    // Show notification
+    UIAlertView *alert =[[UIAlertView alloc] initWithTitle: @"Reset complete"
+                                                   message: @"" delegate: nil
+                                         cancelButtonTitle: @"OK" otherButtonTitles:nil];
+    [alert show];
+}
+
 @end

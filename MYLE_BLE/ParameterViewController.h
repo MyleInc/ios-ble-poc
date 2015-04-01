@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "BluetoothManager.h"
 #import "CBCentralManagerViewController.h"
 
 @interface ParameterViewController : UIViewController <ParameterDelegate, UITextFieldDelegate>
@@ -54,6 +55,8 @@
 @property (weak, nonatomic) IBOutlet UIButton *btWriteAll;
 - (IBAction)writeAll:(id)sender;
 
+@property (weak, nonatomic) IBOutlet UIButton *btReset;
+- (IBAction)clickReset:(id)sender;
 
 
 

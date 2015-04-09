@@ -17,7 +17,7 @@ typedef void (^Listener)(NSString*, NSUInteger, NSString*);
 #define kFileReceivedByBluetooth        @"FileReceivedByBluetooth"
 #define kFilePath                       @"FilePath"
 
-#define kDiscoveredPeripheral           @"DiscoveredPeripheral"
+#define kScanNotification               @"ScanNotification"
 #define kPeripheral                     @"Peripheral"
 
 
@@ -27,9 +27,13 @@ typedef void (^Listener)(NSString*, NSUInteger, NSString*);
 
 + (instancetype)shared;
 
+- (NSArray*)getAvailableTaps;
+
 - (NSString*)getCurrentTapUUID;
 
 - (NSString*)getCurrentPassword;
+
+- (void)connect : (CBPeripheral*)peripheral;
 
 - (void)addParameterReadListener:(Listener)listener;
 

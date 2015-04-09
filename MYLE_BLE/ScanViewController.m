@@ -7,34 +7,49 @@
 //
 
 #import "ScanViewController.h"
-#import "BluetoothManager.h"
-#import "ScanDeviceInfo.h"
 #import "Cell_Session.h"
+#import "TapManager.h"
+
 
 @interface ScanViewController ()
 @end
 
+
 @implementation ScanViewController {
-    BluetoothManager *bluetoothManager;
-    NSMutableArray *listDeviceScan;
+    TapManager *_tap;
 }
+
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    listDeviceScan = [[NSMutableArray alloc] initWithCapacity:100];
-    bluetoothManager = [BluetoothManager createInstance];
-    bluetoothManager.ScanDelegate = self;
+    _tap = [TapManager shared];
+    
+    // subscribe to new peripheral notifications
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(onNewPeripheral:)
+                                                 name:kScanNotification
+                                               object:nil];
 }
+
 
 // disconnect when comeback to ScanViewController
 -(void) viewWillDisappear:(BOOL)animated {
-    if ([self.navigationController.viewControllers indexOfObject:self] == NSNotFound) {
-        NSLog(@"OK");
-        [BluetoothManager destroyInstance];
-    }
     [super viewWillDisappear:animated];
+    
+    // unsubscribe from new peripheral notifications
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                    name:kScanNotification
+                                                  object:nil];
 }
+
+
+// TODO: maybe we need organize this handler as queue
+- (void)onNewPeripheral:(NSNotification *)notification
+{
+    [self.tableView reloadData];
+}
+
 
 #pragma mark - Table view data source
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -48,39 +63,44 @@
         cell = [nib objectAtIndex:0];
     }
     
-    cell.lbName.text = [[listDeviceScan objectAtIndex:indexPath.section] getPeripheral].name;
-    cell.lbUUID.text = [[[listDeviceScan objectAtIndex:indexPath.section] getPeripheral].identifier UUIDString];
+    CBPeripheral *peripheral = [[_tap getAvailableTaps] objectAtIndex:indexPath.section];
+    cell.lbName.text = peripheral.name;
+    cell.lbUUID.text = [peripheral.identifier UUIDString];
     
     return cell;
 }
 
+
 // Row is selected
-- (void)        tableView:(UITableView *)tableView
-  didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-    [bluetoothManager connect:[[listDeviceScan objectAtIndex:indexPath.section] getPeripheral]];
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    CBPeripheral *peripheral = [[_tap getAvailableTaps] objectAtIndex:indexPath.section];
+    
+    [_tap connect:peripheral];
     
     // Save chose device
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    [defaults setValue:[[[listDeviceScan objectAtIndex:indexPath.section]
-                         getPeripheral].identifier UUIDString]
-                forKey:@"PERIPHERAL_UUID"];
+    [defaults setValue:[peripheral.identifier UUIDString] forKey:@"PERIPHERAL_UUID"];
     [defaults synchronize];
     
     [self performSegueWithIdentifier:@"connect_segue" sender:self];
 }
 
+
 ///////////// Add space between cells ////////////////////////////
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return [listDeviceScan count];
+    return [[_tap getAvailableTaps] count];
 }
+
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     return 1;
 }
 
+
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
     return 10.0f; // you can have your own choice, of course
 }
+
 
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
     UIView *headerView = [[UIView alloc] init];
@@ -88,11 +108,5 @@
     return headerView;
 }
 
-- (void)didScanNewDevice: (ScanDeviceInfo*)device {
-    NSLog(@"didScanNewDevice");
-    NSLog(@"%@", [[device getPeripheral].identifier UUIDString]);
-    [listDeviceScan addObject:device];
-    [self.tableView reloadData];
-}
 
 @end

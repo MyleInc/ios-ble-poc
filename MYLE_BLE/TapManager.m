@@ -76,8 +76,27 @@
 }
 
 
+- (NSArray*)getAvailableTaps
+{
+    return _listDeviceScan;
+}
+
+
+- (void)clearTapList
+{
+    [_listDeviceScan removeAllObjects];
+    
+    // notify subscribers about new peripheral
+    [[NSNotificationCenter defaultCenter] postNotificationName:kScanNotification
+                                                        object:nil
+                                                      userInfo:nil];
+}
+
+
 // Scan periphrals with specific service UUID
 - (void)scanPeripherals {
+    [self clearTapList];
+    
     switch (_centralManager.state)
     {
         case CBCentralManagerStateUnsupported:
@@ -140,7 +159,7 @@
 }
 
 
-- (void) disconnect {
+- (void)disconnect {
     if (_discoveredPeripheral != nil && _discoveredPeripheral.state == CBPeripheralStateConnecting) {
         [_centralManager cancelPeripheralConnection:_discoveredPeripheral];
         NSLog(@"disconnect");
@@ -174,23 +193,21 @@
     
     NSLog(@"MYLE BLE: discovered peripheral, advertisement data: %@", advertisementData);
     
-    // Check if have own device
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    NSString *uuid = [defaults valueForKey:@"PERIPHERAL_UUID"];
-    
-    if (nil == uuid) {
-        for (CBPeripheral *aDevice in _listDeviceScan) {
-            if ([aDevice isEqual:peripheral])
-                return;
-        }
-        
+    // if devices is not in our list - add it and notify subscribers
+    if (![_listDeviceScan containsObject:peripheral]) {
         [_listDeviceScan addObject:peripheral];
         
         // notify subscribers abuout new peripheral
-        [[NSNotificationCenter defaultCenter] postNotificationName:kDiscoveredPeripheral
+        [[NSNotificationCenter defaultCenter] postNotificationName:kScanNotification
                                                             object:nil
                                                           userInfo:@{ kPeripheral: peripheral }];
-    } else if (nil != uuid && [[peripheral.identifier UUIDString] isEqualToString:uuid]) {
+    }
+    
+    // check whether given peripheral is one that we were ussing last time
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSString *uuid = [defaults valueForKey:@"PERIPHERAL_UUID"];
+    if (nil != uuid && [[peripheral.identifier UUIDString] isEqualToString:uuid]) {
+        // yes, this is the one! auto connect
         [self connect:peripheral];
     }
 }
@@ -457,6 +474,8 @@
     // Scan for devices again
     if (central.state == CBCentralManagerStatePoweredOn)
     {
+        [self clearTapList];
+        
         [_centralManager scanForPeripheralsWithServices:@[[CBUUID UUIDWithString:SERVICE_UUID]] options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
         [self log:@"Scanning started"];
     }

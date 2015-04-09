@@ -7,8 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "BluetoothManager.h"
 
-@interface ScanViewController : UITableViewController <UITableViewDelegate, UITableViewDataSource, ScanDelegate>
+@interface ScanViewController : UITableViewController <UITableViewDelegate, UITableViewDataSource>
 
 @end

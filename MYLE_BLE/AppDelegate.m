@@ -8,11 +8,13 @@
 
 #import "AppDelegate.h"
 #import <AVFoundation/AVAudioSession.h>
+#import "TapManager.h"
 
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+    [TapManager setup];
     return YES;
 }
 							

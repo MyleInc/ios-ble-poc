@@ -38,7 +38,7 @@
     NSMutableArray *_readParameterListeners;
     NSMutableArray *_traceListeners;
     
-    NSMutableArray *_listDeviceScan;
+    NSMutableArray *_availableTaps;
 }
 
 
@@ -73,7 +73,7 @@
     _readParameterListeners = [[NSMutableArray alloc] init];
     _traceListeners = [[NSMutableArray alloc] init];
     
-    _listDeviceScan = [[NSMutableArray alloc] initWithCapacity:100];
+    _availableTaps = [[NSMutableArray alloc] initWithCapacity:100];
     
     return self;
 }
@@ -81,15 +81,15 @@
 
 - (NSArray*)getAvailableTaps
 {
-    return _listDeviceScan;
+    return _availableTaps;
 }
 
 
 - (void)clearTapList
 {
-    [_listDeviceScan removeAllObjects];
+    [_availableTaps removeAllObjects];
     
-    // notify subscribers about new peripheral
+    // notify subscribers about cleared peripheral list
     [[NSNotificationCenter defaultCenter] postNotificationName:kScanNotification
                                                         object:nil
                                                       userInfo:nil];
@@ -101,7 +101,8 @@
     [self clearTapList];
     
     [_centralManager scanForPeripheralsWithServices:@[[CBUUID UUIDWithString:SERVICE_UUID]] options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
-    [self trace:@"Scanning started"];
+    
+    [self trace:@"Scan started"];
 }
 
 
@@ -132,7 +133,7 @@
 - (void)disconnect {
     if (_discoveredPeripheral != nil && _discoveredPeripheral.state == CBPeripheralStateConnecting) {
         [_centralManager cancelPeripheralConnection:_discoveredPeripheral];
-        [self trace:@"disconnect"];
+        [self trace:@"Disconnectiong from tap %@", _discoveredPeripheral.identifier.UUIDString];
     }
 }
 
@@ -140,7 +141,7 @@
 - (void)connect : (CBPeripheral*)peripheral {
     _discoveredPeripheral = peripheral;
     [_centralManager connectPeripheral:_discoveredPeripheral options:nil];
-    [self trace:@"Connecting"];
+    [self trace:@"Connecting to tap %@", _discoveredPeripheral.identifier.UUIDString];
 }
 
 
@@ -151,40 +152,41 @@
     switch (central.state)
     {
         case CBCentralManagerStateUnsupported:
-            [self trace:@"State: Unsupported"];
+            [self trace:@"BLE state: unsupported"];
             break;
             
         case CBCentralManagerStateUnauthorized:
-            [self trace:@"State: Unauthorized"];
+            [self trace:@"BLE state: unauthorized"];
             break;
             
         case CBCentralManagerStatePoweredOff:
-            [self trace:@"State: Powered Off"];
+            [self trace:@"BLE state: powered off"];
             break;
             
         case CBCentralManagerStatePoweredOn:
-            [self trace:@"State: Powered On"];
+            [self trace:@"BLE state: powered on"];
             [self scanPeripherals];
             break;
             
         case CBCentralManagerStateResetting:
-            [self trace:@"State: Resetting"];
+            [self trace:@"BLE state: resetting"];
             break;
             
         default:
-            [self trace:@"State: Unknown"];
+            [self trace:@"BLE state: unknown"];
             break;
     }
 }
 
+
 //Scan success
 - (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI {
     
-    [self trace:@"MYLE BLE: discovered peripheral, advertisement data: %@", advertisementData];
+    [self trace:@"Discovered peripheral %@ with advertisement data: %@", peripheral.identifier.UUIDString, advertisementData];
     
     // if devices is not in our list - add it and notify subscribers
-    if (![_listDeviceScan containsObject:peripheral]) {
-        [_listDeviceScan addObject:peripheral];
+    if (![_availableTaps containsObject:peripheral]) {
+        [_availableTaps addObject:peripheral];
         
         // notify subscribers abuout new peripheral
         [[NSNotificationCenter defaultCenter] postNotificationName:kScanNotification
@@ -192,11 +194,12 @@
                                                           userInfo:@{ kPeripheral: peripheral }];
     }
     
-    // check whether given peripheral is one that we were ussing last time
+    // check whether given peripheral is one that we were using last time
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSString *uuid = [defaults valueForKey:@"PERIPHERAL_UUID"];
-    if (nil != uuid && [[peripheral.identifier UUIDString] isEqualToString:uuid]) {
+    if (nil != uuid && [peripheral.identifier.UUIDString isEqualToString:uuid]) {
         // yes, this is the one! auto connect
+        [self trace:@"Auto-connecting to previously used tap %@", peripheral.identifier.UUIDString];
         [self connect:peripheral];
     }
 }
@@ -204,14 +207,16 @@
 
 // Scan fail
 - (void)centralManager:(CBCentralManager *)central didFailToConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
-    [self trace:@"Failed to connect"];
+    [self trace:@"Failed to connect to tap %@", peripheral.identifier.UUIDString];
     [self cleanup];
 }
+
 
 // Connect device success callback
 - (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
     [_centralManager stopScan];
-    [self trace:@"Connected"];
+    
+    [self trace:@"Connected to tap %@, stopped scanning", peripheral.identifier.UUIDString];
     
     peripheral.delegate = self;
     
@@ -225,12 +230,10 @@
 - (void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(NSError *)error {
     
     if (error) {
+        [self trace:@"Error discovering services: %@", peripheral.identifier.UUIDString, error];
         [self cleanup];
         return;
     }
-    
-    // Discover other characteristics
-    [self trace:@"MYLE BLE: Services scanned!"];
     
     // List 2 characteristics
     NSArray * characteristics = [NSArray arrayWithObjects: [CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_READ], [CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_WRITE], [CBUUID UUIDWithString:CHARACTERISTIC_UUID_CONFIG], nil];
@@ -240,6 +243,7 @@
     }
 }
 
+
 - (NSData *)makeKey:(NSString *)password {
     NSData *data;
     NSData *passData = [_password dataUsingEncoding:NSUTF8StringEncoding];
@@ -247,21 +251,19 @@
     Byte byteData[10] = { 5, 5, 0, 1, password.length & 0xff };
     
     data = [NSData dataWithBytes:byteData length:5];
-    //[self log:@"MYLE BLE: %@", data);
     
     NSMutableData *concatenatedData = [[NSMutableData alloc] init];
     [concatenatedData appendData:data];
     [concatenatedData appendData:passData];
     
-    //[self log:@"MYLE BLE: %@", passData);
-    //[self log:@"MYLE BLE: %@", concatenatedData);
-    
     return concatenatedData;
 }
+
 
 // List chacracteristics
 - (void)peripheral:(CBPeripheral *)peripheral didDiscoverCharacteristicsForService:(CBService *)service error:(NSError *)error {
     if (error) {
+        [self trace:@"Error discovering characteristics for service %@: %@", service.UUID.UUIDString, error];
         [self cleanup];
         return;
     }
@@ -276,16 +278,14 @@
     
     // Log
     NSString* newStr = [[NSString alloc] initWithData:keyData encoding:NSUTF8StringEncoding];
-    [self trace:[NSString stringWithFormat:@"Send Key: %@, %@", keyData, newStr]];
+    [self trace:@"Sending password: %@", newStr];
     
     [_discoveredPeripheral writeValue:keyData forCharacteristic:[[[_discoveredPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
 }
 
+
 - (void) syncTime {
     // Sync time to board
-    //    double delayInSeconds = 7.0;
-    //    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, delayInSeconds * NSEC_PER_SEC);
-    //    dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
     NSCalendar *calendar = [NSCalendar currentCalendar];
     calendar.timeZone = [NSTimeZone timeZoneWithName:@"UTC"];
     NSDateComponents *components = [calendar components:(NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond | NSCalendarUnitDay | NSCalendarUnitMonth | NSCalendarUnitYear) fromDate:[NSDate date]];
@@ -302,22 +302,21 @@
     Byte byteData[10] = { 5, 5, 0, 0, second & 0xff, minute & 0xff, hour & 0xff, day & 0xff, month & 0xff, (year - 2000) & 0xff };
     
     data = [NSData dataWithBytes:byteData length:10];
-    [self trace:[NSString stringWithFormat:@"Sync time = %@", data]];
+    [self trace:@"Sync time = %@", data];
     
     [_discoveredPeripheral writeValue:data forCharacteristic:[[[_discoveredPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
-    //    });
     
 }
 
+
 - (void) verifyCheck {
     if (!_isVerified) {
-        [self trace:@"Incorrect key. Disconnect"];
+        [self trace:@"Incorrect key. Disconnecting from tap $@...", _discoveredPeripheral.identifier.UUIDString];
         
-        // Notification has stopped
-        [self trace:@"Cancel connection"];
         [_centralManager cancelPeripheralConnection:_discoveredPeripheral];
     }
 }
+
 
 -(NSDate*)getDateFromInt:(unsigned int)l
 {
@@ -347,12 +346,18 @@
 // Result of write to peripheral
 - (void) peripheral:(CBPeripheral *)peripheral didWriteValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
 {
-    [self trace:@"MYLE BLE: Error = %@", error];
+    if (error) {
+        return [self trace:@"Error writing value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
+    }
 }
+
 
 // Update value from peripheral
 - (void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
 {
+    if (error) {
+        return [self trace:@"Error updating value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
+    }
     
     // Not correct characteristics
     if (![characteristic.UUID.UUIDString isEqualToString:CHARACTERISTIC_UUID_TO_READ])
@@ -397,7 +402,7 @@
     else if (_data.length < _dataLength)
     {
         [_data appendData:characteristic.value];
-        //[self log:@"MYLE BLE: len = %d", _data.length);
+        //[self log:@"len = %d", _data.length);
         
         if (_data.length == _dataLength)
         {
@@ -426,6 +431,7 @@
     }
 }
 
+
 // Convert Integer to NSData
 -(NSData *) IntToNSData:(NSInteger)data
 {
@@ -433,9 +439,13 @@
     return [NSData dataWithBytes:byteData length:1];
 }
 
+
 // Update notification from peripheral
 - (void)peripheral:(CBPeripheral *)peripheral didUpdateNotificationStateForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
 {
+    if (error) {
+        return [self trace:@"Error updating notification state for characteristic %@: %@", characteristic.UUID.UUIDString, error];
+    }
     
     // Listen only 2 characterristics
     if (![characteristic.UUID isEqual:[CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_READ]] &&
@@ -445,13 +455,13 @@
     }
     
     if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_READ]] && !characteristic.isNotifying)
-        
     {
         // Notification has stopped
         [self trace:@"Cancel connection"];
         [_centralManager cancelPeripheralConnection:peripheral];
     }
 }
+
 
 // Disconnect peripheral
 - (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error
@@ -470,11 +480,6 @@
     }
 }
 
-// Disable rotate screen
-- (NSUInteger)supportedInterfaceOrientations
-{
-    return UIInterfaceOrientationMaskPortrait;
-}
 
 - (NSUInteger) getFromBytes:(Byte *) byteData {
     int dv = byteData[2]-48;
@@ -485,6 +490,7 @@
     
     return value;
 }
+
 
 // Filter received data from device
 - (Boolean) readParameter:(NSData *)data {
@@ -540,7 +546,7 @@
         [data getBytes:versionData range:NSMakeRange(@"5503VERSION".length + 1, data.length - @"5503VERSION".length - 1)];
         ret = true;
         NSString *version = [NSString stringWithUTF8String:(const char *)versionData];
-        [self trace:@"MYLE BLE: Device version received: %@", version];
+        [self trace:@"Device version received: %@", version];
         [self notifyReadParameterListeners:@"VERSION" intValue:0 strValue:version];
     }
     else if (!([string rangeOfString:@"CONNECTED"].location == NSNotFound))
@@ -555,7 +561,7 @@
     
     //[self log:[NSString stringWithFormat:@"%@ = %d", str, value]];
     
-    [self trace:@"MYLE BLE: ret = %d", ret];
+    [self trace:@"ret = %d", ret];
     return ret;
 }
 

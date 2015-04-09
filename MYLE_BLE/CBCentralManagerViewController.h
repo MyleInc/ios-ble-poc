@@ -8,10 +8,8 @@
 
 #import <UIKit/UIKit.h>
 #import <CoreBluetooth/CoreBluetooth.h>
-#import "BluetoothManager.h"
-#import "SERVICES.h"
 
-@interface CBCentralManagerViewController : UIViewController<LogDelegate>
+@interface CBCentralManagerViewController : UIViewController
 
 @property (weak, nonatomic) IBOutlet UITextView *tvLog;
 

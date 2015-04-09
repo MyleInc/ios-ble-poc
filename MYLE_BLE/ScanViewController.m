@@ -27,9 +27,11 @@
     
     // subscribe to new peripheral notifications
     [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(onNewPeripheral:)
+                                             selector:@selector(onScanPeripheral:)
                                                  name:kScanNotification
                                                object:nil];
+    
+    [self.tableView reloadData];
 }
 
 
@@ -44,8 +46,7 @@
 }
 
 
-// TODO: maybe we need organize this handler as queue
-- (void)onNewPeripheral:(NSNotification *)notification
+- (void)onScanPeripheral:(NSNotification *)notification
 {
     [self.tableView reloadData];
 }

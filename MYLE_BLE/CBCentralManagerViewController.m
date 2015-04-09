@@ -14,7 +14,6 @@
     Boolean isDropListReadVisible;
     Boolean isReceivingAudioFile;
     NSString *initialPassword;
-    BluetoothManager *bluetoothManager;
 }
 
 - (void)viewDidLoad {
@@ -25,13 +24,10 @@
     [self.view addGestureRecognizer:tap];
     
     // Add "Write/Read Parameters" button on the right corner of NavigationBar
-    UIBarButtonItem *anotherButton = [[UIBarButtonItem alloc] initWithTitle:@"Parameter"
+    UIBarButtonItem *anotherButton = [[UIBarButtonItem alloc] initWithTitle:@"Parameters"
                                                                       style:UIBarButtonItemStylePlain
                                                                      target:self action:@selector(btDevicePress)];
     self.navigationItem.rightBarButtonItem = anotherButton;
-    
-    bluetoothManager = [BluetoothManager createInstance];
-    bluetoothManager.logDelegate = self;
 }
 
 - (void) btDevicePress {
@@ -50,8 +46,6 @@
 // disconnect when comeback to ScanViewController
 -(void) viewWillDisappear:(BOOL)animated {
     if ([self.navigationController.viewControllers indexOfObject:self] == NSNotFound) {
-        [BluetoothManager destroyInstance];
-        
         if (self.navigationController.viewControllers.count == 2) {
             [self.navigationController popToRootViewControllerAnimated:NO];
         }

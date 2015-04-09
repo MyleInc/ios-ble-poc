@@ -248,7 +248,7 @@
     NSData *data;
     NSData *passData = [_password dataUsingEncoding:NSUTF8StringEncoding];
     
-    Byte byteData[10] = { 5, 5, 0, 1, password.length & 0xff };
+    Byte byteData[5] = { '5', '5', '0', '1', password.length & 0xff };
     
     data = [NSData dataWithBytes:byteData length:5];
     
@@ -278,7 +278,7 @@
     
     // Log
     NSString* newStr = [[NSString alloc] initWithData:keyData encoding:NSUTF8StringEncoding];
-    [self trace:@"Sending password: %@", newStr];
+    [self trace:@"Sending password: %@", _password];
     
     [_discoveredPeripheral writeValue:keyData forCharacteristic:[[[_discoveredPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
 }
@@ -299,7 +299,7 @@
     year = [components year];
     
     NSData *data = [[NSData alloc] init];
-    Byte byteData[10] = { 5, 5, 0, 0, second & 0xff, minute & 0xff, hour & 0xff, day & 0xff, month & 0xff, (year - 2000) & 0xff };
+    Byte byteData[10] = { '5', '5', '0', '0', second & 0xff, minute & 0xff, hour & 0xff, day & 0xff, month & 0xff, (year - 2000) & 0xff };
     
     data = [NSData dataWithBytes:byteData length:10];
     [self trace:@"Sync time = %@", data];

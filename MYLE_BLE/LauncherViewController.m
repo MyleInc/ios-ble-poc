@@ -8,6 +8,8 @@
 
 #import "LauncherViewController.h" 
 #import "CBCentralManagerViewController.h"
+#import "TapManager.h"
+#import "Globals.h"
 
 
 @interface LauncherViewController ()
@@ -23,9 +25,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    // Hide keyboard when user touch outside textfield
-    UITapGestureRecognizer *tap =[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(dismissKeyboard)];
-    [self.view addGestureRecognizer:tap];
+    self.tfPassword.text = DEFAULT_TAP_PASSWORD;
 }
 
 
@@ -45,38 +45,19 @@
     
     /** Set title Navigation ControlBar*/
     UINavigationController *navCon  = (UINavigationController*) [self.navigationController.viewControllers objectAtIndex:0];
-    navCon.navigationItem.title = @"Launcher";
-    
-    /** Load old password */
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    initialPassword = [defaults valueForKey:@"PASSWORD"];
-    if (initialPassword == nil) initialPassword = @"1234abcd";
-    self.tfPassword.text = initialPassword;
+    navCon.navigationItem.title = @"Login to Tap";
 }
 
-// Hide keyboard when tocuch outside
-- (void)dismissKeyboard {
-    [self.tfPassword resignFirstResponder];
-}
-
-- (IBAction)tfExit:(id)sender {
-    [sender resignFirstResponder];
-}
 
 - (IBAction)start:(id)sender {
-    // Set  password
-    //BluetoothManager *bluetoothManager = [BluetoothManager createInstance];
-    //[bluetoothManager setInitialPassword:self.tfPassword.text];
-    
-    // Check if have connected
+
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    NSString *uuid = [defaults valueForKey:@"PERIPHERAL_UUID"];
+    NSString *uuid = [defaults valueForKey:SETTINGS_PERIPHERAL_UUID];
     
-    if (nil == uuid) {
-         [self performSegueWithIdentifier:@"scan_segue" sender:self];
-    } else {
-        [self performSegueWithIdentifier:@"connect_segue_2" sender:self];
-    }
+    TapManager *tap = [TapManager shared];
+    [tap connect:[tap getPeripheralByUUID:uuid] pass:self.tfPassword.text];
+    
+    [self.navigationController popViewControllerAnimated:YES];
 }
 
 

@@ -242,25 +242,16 @@
                                 <rect key="frame" x="16" y="101" width="180" height="30"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits"/>
-                                <connections>
-                                    <action selector="tfExit:" destination="IIx-uT-eAb" eventType="editingDidEndOnExit" id="zV5-yt-E91"/>
-                                </connections>
                             </textField>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Current Password" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="d5W-lf-9s1">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Tap Password" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="d5W-lf-9s1">
                                 <rect key="frame" x="16" y="72" width="143" height="21"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" fixedFrame="YES" editable="NO" text="This is current password to connect to device. Modify it to test connect with incorrect password." selectable="NO" translatesAutoresizingMaskIntoConstraints="NO" id="GKi-n0-2A6">
-                                <rect key="frame" x="16" y="139" width="241" height="101"/>
-                                <color key="backgroundColor" red="0.81730368980000001" green="0.98838637669999996" blue="1" alpha="1" colorSpace="calibratedRGB"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
-                            </textView>
                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="lY7-dx-0Me">
                                 <rect key="frame" x="214" y="101" width="46" height="30"/>
-                                <state key="normal" title="Start">
+                                <state key="normal" title="Login">
                                     <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
                                 <connections>
@@ -272,9 +263,7 @@
                     </view>
                     <navigationItem key="navigationItem" id="TUc-wZ-kKW"/>
                     <connections>
-                        <outlet property="btStart" destination="lY7-dx-0Me" id="g2c-Xu-A58"/>
                         <outlet property="tfPassword" destination="r6Y-yw-N67" id="Uus-tC-IGO"/>
-                        <segue destination="gdA-SC-WLL" kind="push" identifier="connect_segue_2" id="Gbt-Ik-zrl"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="9f8-IU-0u1" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -303,6 +292,9 @@
                         </connections>
                     </tableView>
                     <navigationItem key="navigationItem" id="cdE-NC-4B9"/>
+                    <connections>
+                        <segue destination="IIx-uT-eAb" kind="push" identifier="login_segue" id="AoV-c0-9AO"/>
+                    </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="uiq-91-ZFh" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -330,7 +322,4 @@
         <simulatedOrientationMetrics key="orientation"/>
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
-    <inferredMetricsTieBreakers>
-        <segue reference="Gbt-Ik-zrl"/>
-    </inferredMetricsTieBreakers>
 </document>

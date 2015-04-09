@@ -9,10 +9,7 @@
 #import "ScanViewController.h"
 #import "Cell_Session.h"
 #import "TapManager.h"
-
-
-@interface ScanViewController ()
-@end
+#import "Globals.h"
 
 
 @implementation ScanViewController {
@@ -25,13 +22,19 @@
     
     _tap = [TapManager shared];
     
+    [self.tableView reloadData];
+}
+
+
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    
     // subscribe to new peripheral notifications
     [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(onScanPeripheral:)
-                                                 name:kScanNotification
+                                             selector:@selector(onTapNotification:)
+                                                 name:kTapNtfn
                                                object:nil];
-    
-    [self.tableView reloadData];
 }
 
 
@@ -41,14 +44,17 @@
     
     // unsubscribe from new peripheral notifications
     [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                    name:kScanNotification
+                                                    name:kTapNtfn
                                                   object:nil];
 }
 
 
-- (void)onScanPeripheral:(NSNotification *)notification
+- (void)onTapNotification:(NSNotification *)notification
 {
-    [self.tableView reloadData];
+    int type = ((NSNumber*)notification.userInfo[kTapNtfnType]).intValue;
+    if (type == kTapNtfnTypeScan || type == kTapNtfnTypeStatus) {
+        [self.tableView reloadData];
+    }
 }
 
 
@@ -65,8 +71,18 @@
     }
     
     CBPeripheral *peripheral = [[_tap getAvailableTaps] objectAtIndex:indexPath.section];
+    BOOL connected = [[_tap getCurrentTapUUID] isEqualToString:peripheral.identifier.UUIDString];
+    
     cell.lbName.text = peripheral.name;
-    cell.lbUUID.text = [peripheral.identifier UUIDString];
+    cell.lbUUID.text = peripheral.identifier.UUIDString;
+    
+    if (connected) {
+        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+        cell.userInteractionEnabled = NO;
+        cell.lbName.enabled = NO;
+        cell.lbUUID.enabled = NO;
+        cell.lbName.text = [NSString stringWithFormat:@"%@ (connected)", cell.lbName.text];
+    }
     
     return cell;
 }
@@ -76,14 +92,12 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     CBPeripheral *peripheral = [[_tap getAvailableTaps] objectAtIndex:indexPath.section];
     
-    [_tap connect:peripheral];
-    
-    // Save chose device
+    // Save chosen device
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    [defaults setValue:[peripheral.identifier UUIDString] forKey:@"PERIPHERAL_UUID"];
+    [defaults setValue:[peripheral.identifier UUIDString] forKey:SETTINGS_PERIPHERAL_UUID];
     [defaults synchronize];
     
-    [self performSegueWithIdentifier:@"connect_segue" sender:self];
+    [self performSegueWithIdentifier:@"login_segue" sender:self];
 }
 
 

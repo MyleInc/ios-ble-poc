@@ -7,7 +7,6 @@
 //
 
 #import "TapManager.h"
-#import "Globals.h"
 #import "Services.h"
 
 
@@ -22,13 +21,17 @@
 @implementation TapManager
 {
     CBCentralManager *_centralManager;
-    CBPeripheral *_discoveredPeripheral;
+    
+    CBPeripheral *_currentPeripheral;
+    
+    NSString *_currentUUID;
+    NSString *_currentPass;
+    
+    NSMutableArray *_availableTaps;
+    
     NSMutableData *_data;
     unsigned int _dataLength;
-
     unsigned int _time;
-    
-    NSString *_password;
     
     Boolean _isVerified;
     Boolean _isDropListSetVisible;
@@ -37,15 +40,6 @@
     
     NSMutableArray *_readParameterListeners;
     NSMutableArray *_traceListeners;
-    
-    NSMutableArray *_availableTaps;
-}
-
-
-
-+ (void)setup
-{
-    [[self class] shared];
 }
 
 
@@ -60,15 +54,26 @@
 }
 
 
++ (void)setup:(NSString*)uuid pass:(NSString*)pass
+{
+    TapManager *tap = [[self class] shared];
+    [tap setInitUUIDAndPass:uuid pass:pass];
+}
+
+
+- (void)setInitUUIDAndPass:(NSString *)uuid pass:(NSString *)pass {
+    _currentUUID = uuid;
+    _currentPass = pass ? pass : DEFAULT_TAP_PASSWORD;
+}
+
+
 - (instancetype)init
 {
     self = [super init];
     
     _centralManager = [[CBCentralManager alloc] initWithDelegate:self queue:nil];
     
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    _password = [defaults valueForKey:@"TAP-PASSWORD"];
-    _password = (_password == nil) ? DEFAULT_TAP_PASSWORD : _password;
+    _currentPass = DEFAULT_TAP_PASSWORD;
     
     _readParameterListeners = [[NSMutableArray alloc] init];
     _traceListeners = [[NSMutableArray alloc] init];
@@ -90,9 +95,9 @@
     [_availableTaps removeAllObjects];
     
     // notify subscribers about cleared peripheral list
-    [[NSNotificationCenter defaultCenter] postNotificationName:kScanNotification
+    [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                         object:nil
-                                                      userInfo:nil];
+                                                      userInfo:@{ kTapNtfnType: @kTapNtfnTypeScan }];
 }
 
 
@@ -110,14 +115,14 @@
 - (void)cleanup {
     
     // See if we are subscribed to a characteristic on the peripheral
-    if (_discoveredPeripheral.services != nil) {
-        for (CBService *service in _discoveredPeripheral.services) {
+    if (_currentPeripheral.services != nil) {
+        for (CBService *service in _currentPeripheral.services) {
             if (service.characteristics != nil) {
                 for (CBCharacteristic *characteristic in service.characteristics) {
                     if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_READ]] ||
                         [characteristic.UUID isEqual:[CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_WRITE]]) {
                         if (characteristic.isNotifying) {
-                            [_discoveredPeripheral setNotifyValue:NO forCharacteristic:characteristic];
+                            [_currentPeripheral setNotifyValue:NO forCharacteristic:characteristic];
                             return;
                         }
                     }
@@ -126,22 +131,24 @@
         }
     }
     
-    [_centralManager cancelPeripheralConnection:_discoveredPeripheral];
+    [_centralManager cancelPeripheralConnection:_currentPeripheral];
 }
 
 
 - (void)disconnect {
-    if (_discoveredPeripheral != nil && _discoveredPeripheral.state == CBPeripheralStateConnecting) {
-        [_centralManager cancelPeripheralConnection:_discoveredPeripheral];
-        [self trace:@"Disconnectiong from tap %@", _discoveredPeripheral.identifier.UUIDString];
+    if (_currentPeripheral != nil && _currentPeripheral.state == CBPeripheralStateConnecting) {
+        [_centralManager cancelPeripheralConnection:_currentPeripheral];
+        [self trace:@"Disconnecting from tap %@", _currentPeripheral.identifier.UUIDString];
     }
 }
 
 
-- (void)connect : (CBPeripheral*)peripheral {
-    _discoveredPeripheral = peripheral;
-    [_centralManager connectPeripheral:_discoveredPeripheral options:nil];
-    [self trace:@"Connecting to tap %@", _discoveredPeripheral.identifier.UUIDString];
+- (void)connect: (CBPeripheral*)peripheral pass:(NSString*)pass {
+    _currentPeripheral = peripheral;
+    _currentUUID = peripheral.identifier.UUIDString;
+    _currentPass = pass;
+    [_centralManager connectPeripheral:_currentPeripheral options:nil];
+    [self trace:@"Connecting to tap %@", _currentPeripheral.identifier.UUIDString];
 }
 
 
@@ -189,18 +196,16 @@
         [_availableTaps addObject:peripheral];
         
         // notify subscribers abuout new peripheral
-        [[NSNotificationCenter defaultCenter] postNotificationName:kScanNotification
+        [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                             object:nil
-                                                          userInfo:@{ kPeripheral: peripheral }];
+                                                          userInfo:@{ kTapNtfnType: @kTapNtfnTypeScan, kTapNtfnPeripheral: peripheral }];
     }
     
     // check whether given peripheral is one that we were using last time
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    NSString *uuid = [defaults valueForKey:@"PERIPHERAL_UUID"];
-    if (nil != uuid && [peripheral.identifier.UUIDString isEqualToString:uuid]) {
+    if ([peripheral.identifier.UUIDString isEqualToString:_currentUUID]) {
         // yes, this is the one! auto connect
         [self trace:@"Auto-connecting to previously used tap %@", peripheral.identifier.UUIDString];
-        [self connect:peripheral];
+        [self connect:peripheral pass:_currentPass];
     }
 }
 
@@ -221,6 +226,11 @@
     peripheral.delegate = self;
     
     [peripheral discoverServices:@[[CBUUID UUIDWithString:SERVICE_UUID]]];
+    
+    // notify subscribers about connected peripheral
+    [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
+                                                        object:nil
+                                                      userInfo:@{ kTapNtfnType: @kTapNtfnTypeStatus }];
 }
 
 
@@ -246,7 +256,7 @@
 
 - (NSData *)makeKey:(NSString *)password {
     NSData *data;
-    NSData *passData = [_password dataUsingEncoding:NSUTF8StringEncoding];
+    NSData *passData = [_currentPass dataUsingEncoding:NSUTF8StringEncoding];
     
     Byte byteData[5] = { '5', '5', '0', '1', password.length & 0xff };
     
@@ -274,13 +284,11 @@
     }
     
     // Send password to board
-    NSData *keyData = [self makeKey:_password];
+    NSData *keyData = [self makeKey:_currentPass];
     
-    // Log
-    NSString* newStr = [[NSString alloc] initWithData:keyData encoding:NSUTF8StringEncoding];
-    [self trace:@"Sending password: %@", _password];
+    [self trace:@"Sending password: %@", _currentPass];
     
-    [_discoveredPeripheral writeValue:keyData forCharacteristic:[[[_discoveredPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
+    [_currentPeripheral writeValue:keyData forCharacteristic:[[[_currentPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
 }
 
 
@@ -304,16 +312,16 @@
     data = [NSData dataWithBytes:byteData length:10];
     [self trace:@"Sync time = %@", data];
     
-    [_discoveredPeripheral writeValue:data forCharacteristic:[[[_discoveredPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
+    [_currentPeripheral writeValue:data forCharacteristic:[[[_currentPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
     
 }
 
 
 - (void) verifyCheck {
     if (!_isVerified) {
-        [self trace:@"Incorrect key. Disconnecting from tap $@...", _discoveredPeripheral.identifier.UUIDString];
+        [self trace:@"Incorrect key. Disconnecting from tap $@...", _currentPeripheral.identifier.UUIDString];
         
-        [_centralManager cancelPeripheralConnection:_discoveredPeripheral];
+        [_centralManager cancelPeripheralConnection:_currentPeripheral];
     }
 }
 
@@ -376,7 +384,7 @@
     NSInteger numBytes = characteristic.value.length;
     NSData *data = [self IntToNSData:numBytes];
     
-    [_discoveredPeripheral writeValue:data forCharacteristic:[[[_discoveredPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
+    [_currentPeripheral writeValue:data forCharacteristic:[[[_currentPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
     
     if (_dataLength == 0) // First packet
     {
@@ -413,9 +421,9 @@
             NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
             [formatter setDateFormat:@"yyyy-MM-dd_HH-mm-ss"];
             NSString *filePath = [NSString stringWithFormat:@"%@.wav", [formatter stringFromDate:[self getDateFromInt:_time]]];
+            filePath = [DocumentsPath() stringByAppendingPathComponent:filePath];
             
-            NSString *docPath = [DocumentsPath() stringByAppendingPathComponent:filePath];
-            [_data writeToFile:docPath atomically:YES];
+            [_data writeToFile:filePath atomically:YES];
             
             [self trace:[NSString stringWithFormat:@"File received = %@.wav", [formatter stringFromDate:[self getDateFromInt:_time]]]];
             
@@ -424,9 +432,9 @@
             _isReceivingAudioFile = false;
             
             // notify subscribers about new file appearence
-            [[NSNotificationCenter defaultCenter] postNotificationName:kFileReceivedByBluetooth
+            [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                                 object:nil
-                                                              userInfo:@{kFilePath: docPath}];
+                                                              userInfo:@{ kTapNtfnType: @kTapNtfnTypeFile, kTapNtfnFilePath: filePath }];
         }
     }
 }
@@ -466,9 +474,11 @@
 // Disconnect peripheral
 - (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error
 {
-    _discoveredPeripheral = nil;
+    _currentPeripheral = nil;
     _dataLength = 0;
     _isReceivingAudioFile = false;
+    
+    [self trace:@"Disconnected from tap %@", peripheral.identifier.UUIDString];
     
     // Scan for devices again
     if (central.state == CBCentralManagerStatePoweredOn)
@@ -552,23 +562,25 @@
     else if (!([string rangeOfString:@"CONNECTED"].location == NSNotFound))
     {
         _isVerified = true;
-        ret= true;
-        [self trace:@"Connected"];
+        ret = true;
         
         [self syncTime];
+        
+        // notify subscribers about connected peripheral
+        [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
+                                                            object:nil
+                                                          userInfo:@{ kTapNtfnType: @kTapNtfnTypeStatus }];
+        
         return ret;
     }
     
-    //[self log:[NSString stringWithFormat:@"%@ = %d", str, value]];
-    
-    [self trace:@"ret = %d", ret];
     return ret;
 }
 
 
 - (void) sendParameter: (NSData *) data
 {
-    [_discoveredPeripheral writeValue:data forCharacteristic:[[[_discoveredPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
+    [_currentPeripheral writeValue:data forCharacteristic:[[[_currentPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
 }
 
 
@@ -611,11 +623,7 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 }
 
 - (void)sendWritePASSWORD:(NSString *)value {
-    _password = value;
-
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    [defaults setValue:_password forKey:@"TAP-PASSWORD"];
-    [defaults synchronize];
+    _currentPass = value;
     
     unichar passLength = { value.length & 0xff };
 
@@ -662,14 +670,14 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 
 - (NSString*) getCurrentTapUUID
 {
-    return _discoveredPeripheral
-        ? [NSString stringWithFormat:@"%@", [[[_discoveredPeripheral services] objectAtIndex:0] UUID]]
+    return _currentPeripheral
+        ? _currentPeripheral.identifier.UUIDString
         : nil;
 }
 
 
 - (NSString*)getCurrentPassword {
-    return _password;
+    return _currentPass;
 }
 
 
@@ -713,6 +721,17 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
             listener(message);
         }
     }
+}
+
+
+- (CBPeripheral*)getPeripheralByUUID:(NSString*)uuid
+{
+    for (CBPeripheral *p in _availableTaps) {
+        if ([p.identifier.UUIDString isEqualToString:uuid]) {
+            return p;
+        }
+    }
+    return nil;
 }
 
 

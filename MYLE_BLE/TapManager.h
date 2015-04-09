@@ -8,6 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import <CoreBluetooth/CoreBluetooth.h>
+#import "Globals.h"
 
 
 typedef void (^ReadParameterListener)(NSString*, NSUInteger, NSString*);
@@ -15,16 +16,20 @@ typedef void (^TraceListener)(NSString*);
 
 
 #define DEFAULT_TAP_PASSWORD            @"1234abcd"
-#define kFileReceivedByBluetooth        @"FileReceivedByBluetooth"
-#define kFilePath                       @"FilePath"
 
-#define kScanNotification               @"ScanNotification"
-#define kPeripheral                     @"Peripheral"
+#define kTapNtfn                        @"TapNotification"
+#define kTapNtfnType                    @"Type"
+#define kTapNtfnFilePath                @"FilePath" // path to a recieved file
+#define kTapNtfnPeripheral              @"Peripheral"
+
+#define kTapNtfnTypeScan                1 // indicates new devices are discovered
+#define kTapNtfnTypeStatus              2 // connection status
+#define kTapNtfnTypeFile                3 // recieved a file
 
 
 @interface TapManager : NSObject <CBCentralManagerDelegate, CBPeripheralDelegate>
 
-+ (void)setup;
++ (void)setup:(NSString*)uuid pass:(NSString*)pass;
 
 + (instancetype)shared;
 
@@ -34,7 +39,9 @@ typedef void (^TraceListener)(NSString*);
 
 - (NSString*)getCurrentPassword;
 
-- (void)connect : (CBPeripheral*)peripheral;
+- (CBPeripheral*)getPeripheralByUUID:(NSString*)uuid;
+
+- (void)connect: (CBPeripheral*)peripheral pass:(NSString*)pass;
 
 - (void)addParameterReadListener:(ReadParameterListener)listener;
 - (void)addTraceListener:(TraceListener)listener;

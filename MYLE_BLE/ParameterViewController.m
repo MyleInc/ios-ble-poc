@@ -8,6 +8,7 @@
 
 #import "ParameterViewController.h"
 #import "TapManager.h"
+#import "Globals.h"
 
 
 @implementation ParameterViewController {
@@ -87,6 +88,11 @@
     [_tap sendWriteACCELERSENS:[self formatString:[self.tfACCELER_SENS text] numberDigit:3]];
     [_tap sendWriteMIC:[self formatString:[self.tfMIC text] numberDigit:3]];
     [_tap sendWritePASSWORD:self.tfPASSWORD.text];
+    
+    // save password in user defaults
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [defaults setValue:self.tfPASSWORD.text forKey:SETTINGS_PERIPHERAL_PASS];
+    [defaults synchronize];
 }
 
 
@@ -106,7 +112,7 @@
 - (IBAction)clickReset:(id)sender {
     // Forget this device
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    [defaults setValue:nil forKey:@"PERIPHERAL_UUID"];
+    [defaults setValue:nil forKey:SETTINGS_PERIPHERAL_UUID];
     [defaults synchronize];
     
     // Show notification

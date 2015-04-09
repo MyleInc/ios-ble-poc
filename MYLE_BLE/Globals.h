@@ -13,3 +13,7 @@ CGFloat iOSVersion();
 
 /// right way to get path to Documents directory
 NSString * DocumentsPath();
+
+
+#define SETTINGS_PERIPHERAL_UUID @"PERIPHERAL_UUID"
+#define SETTINGS_PERIPHERAL_PASS @"PERIPHERAL_PASS"

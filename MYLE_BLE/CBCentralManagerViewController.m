@@ -10,6 +10,11 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
+    // Add "Connect" button to the NavigationBar
+    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Connect"
+                                                                              style:UIBarButtonItemStylePlain
+                                                                             target:self action:@selector(onConnectButtonTap)];
+    
     // Add "Parameters" button on the right corner of NavigationBar
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Parameters"
                                                                       style:UIBarButtonItemStylePlain
@@ -26,6 +31,11 @@
 
 - (void) onParametersButtonTap {
     [self performSegueWithIdentifier:@"parameter_segue" sender:self];
+}
+
+
+- (void) onConnectButtonTap {
+    [self performSegueWithIdentifier:@"scan_segue" sender:self];
 }
 
 

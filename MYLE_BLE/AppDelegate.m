@@ -9,12 +9,14 @@
 #import "AppDelegate.h"
 #import <AVFoundation/AVAudioSession.h>
 #import "TapManager.h"
+#import "Globals.h"
 
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-    [TapManager setup];
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [TapManager setup:[defaults valueForKey:SETTINGS_PERIPHERAL_UUID] pass:[defaults valueForKey:SETTINGS_PERIPHERAL_PASS]];
     return YES;
 }
 							

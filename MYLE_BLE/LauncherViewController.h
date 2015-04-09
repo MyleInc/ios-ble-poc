@@ -7,12 +7,16 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "TapManager.h"
+
+
 
 @interface LauncherViewController : UIViewController
+
+
 @property (weak, nonatomic) IBOutlet UITextField *tfPassword;
-- (IBAction)tfExit:(id)sender;
+
 - (IBAction)start:(id)sender;
-@property (weak, nonatomic) IBOutlet UIButton *btStart;
 
 
 @end

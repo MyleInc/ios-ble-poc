@@ -13,7 +13,8 @@
 
 
 @interface TapManager()
-    - (void) notifyListeners:(NSString*)parameterName intValue:(NSUInteger)intValue strValue:(NSString*) strValue;
+    - (void) notifyReadParameterListeners:(NSString*)parameterName intValue:(NSUInteger)intValue strValue:(NSString*) strValue;
+    - (void) trace:(NSString*)formatString, ...;
 @end
 
 
@@ -34,7 +35,8 @@
     Boolean _isDropListReadVisible;
     Boolean _isReceivingAudioFile;
     
-    NSMutableArray *_listeners;
+    NSMutableArray *_readParameterListeners;
+    NSMutableArray *_traceListeners;
     
     NSMutableArray *_listDeviceScan;
 }
@@ -68,7 +70,8 @@
     _password = [defaults valueForKey:@"TAP-PASSWORD"];
     _password = (_password == nil) ? DEFAULT_TAP_PASSWORD : _password;
     
-    _listeners = [[NSMutableArray alloc] init];
+    _readParameterListeners = [[NSMutableArray alloc] init];
+    _traceListeners = [[NSMutableArray alloc] init];
     
     _listDeviceScan = [[NSMutableArray alloc] initWithCapacity:100];
     
@@ -97,34 +100,8 @@
 - (void)scanPeripherals {
     [self clearTapList];
     
-    switch (_centralManager.state)
-    {
-        case CBCentralManagerStateUnsupported:
-            NSLog(@"MYLE BLE: State: Unsupported");
-            break;
-            
-        case CBCentralManagerStateUnauthorized:
-            NSLog(@"MYLE BLE: State: Unauthorized");
-            break;
-            
-        case CBCentralManagerStatePoweredOff:
-            NSLog(@"MYLE BLE: State: Powered Off");
-            break;
-            
-        case CBCentralManagerStatePoweredOn:
-            NSLog(@"MYLE BLE: State: Powered On");
-            [_centralManager scanForPeripheralsWithServices:@[[CBUUID UUIDWithString:SERVICE_UUID]] options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
-            [self log:@"Scanning started"];
-            break;
-            
-        case CBCentralManagerStateUnknown:
-            NSLog(@"MYLE BLE: State: Unknown");
-            break;
-            
-        case CBCentralManagerStateResetting:
-            NSLog(@"MYLE BLE: State: Resetting");
-            break;
-    }
+    [_centralManager scanForPeripheralsWithServices:@[[CBUUID UUIDWithString:SERVICE_UUID]] options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
+    [self trace:@"Scanning started"];
 }
 
 
@@ -152,17 +129,10 @@
 }
 
 
-// Display log to screen function
-- (void)log:(NSString*)s
-{
-    NSLog(@"MYLE BLE: %@", s);
-}
-
-
 - (void)disconnect {
     if (_discoveredPeripheral != nil && _discoveredPeripheral.state == CBPeripheralStateConnecting) {
         [_centralManager cancelPeripheralConnection:_discoveredPeripheral];
-        NSLog(@"disconnect");
+        [self trace:@"disconnect"];
     }
 }
 
@@ -170,7 +140,7 @@
 - (void)connect : (CBPeripheral*)peripheral {
     _discoveredPeripheral = peripheral;
     [_centralManager connectPeripheral:_discoveredPeripheral options:nil];
-    NSLog(@"Connecting");
+    [self trace:@"Connecting"];
 }
 
 
@@ -178,20 +148,39 @@
 
 // Scan peripherals
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central {
-    // You should test all scenarios
-    if (central.state != CBCentralManagerStatePoweredOn) {
-        return;
-    }
-    
-    if (central.state == CBCentralManagerStatePoweredOn) {
-        [self scanPeripherals];
+    switch (central.state)
+    {
+        case CBCentralManagerStateUnsupported:
+            [self trace:@"State: Unsupported"];
+            break;
+            
+        case CBCentralManagerStateUnauthorized:
+            [self trace:@"State: Unauthorized"];
+            break;
+            
+        case CBCentralManagerStatePoweredOff:
+            [self trace:@"State: Powered Off"];
+            break;
+            
+        case CBCentralManagerStatePoweredOn:
+            [self trace:@"State: Powered On"];
+            [self scanPeripherals];
+            break;
+            
+        case CBCentralManagerStateResetting:
+            [self trace:@"State: Resetting"];
+            break;
+            
+        default:
+            [self trace:@"State: Unknown"];
+            break;
     }
 }
 
 //Scan success
 - (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI {
     
-    NSLog(@"MYLE BLE: discovered peripheral, advertisement data: %@", advertisementData);
+    [self trace:@"MYLE BLE: discovered peripheral, advertisement data: %@", advertisementData];
     
     // if devices is not in our list - add it and notify subscribers
     if (![_listDeviceScan containsObject:peripheral]) {
@@ -215,14 +204,14 @@
 
 // Scan fail
 - (void)centralManager:(CBCentralManager *)central didFailToConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
-    [self log:@"Failed to connect"];
+    [self trace:@"Failed to connect"];
     [self cleanup];
 }
 
 // Connect device success callback
 - (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
     [_centralManager stopScan];
-    [self log:@"Connected"];
+    [self trace:@"Connected"];
     
     peripheral.delegate = self;
     
@@ -241,7 +230,7 @@
     }
     
     // Discover other characteristics
-    NSLog(@"MYLE BLE: Services scanned!");
+    [self trace:@"MYLE BLE: Services scanned!"];
     
     // List 2 characteristics
     NSArray * characteristics = [NSArray arrayWithObjects: [CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_READ], [CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_WRITE], [CBUUID UUIDWithString:CHARACTERISTIC_UUID_CONFIG], nil];
@@ -258,14 +247,14 @@
     Byte byteData[10] = { 5, 5, 0, 1, password.length & 0xff };
     
     data = [NSData dataWithBytes:byteData length:5];
-    //NSLog(@"MYLE BLE: %@", data);
+    //[self log:@"MYLE BLE: %@", data);
     
     NSMutableData *concatenatedData = [[NSMutableData alloc] init];
     [concatenatedData appendData:data];
     [concatenatedData appendData:passData];
     
-    //NSLog(@"MYLE BLE: %@", passData);
-    //NSLog(@"MYLE BLE: %@", concatenatedData);
+    //[self log:@"MYLE BLE: %@", passData);
+    //[self log:@"MYLE BLE: %@", concatenatedData);
     
     return concatenatedData;
 }
@@ -287,7 +276,7 @@
     
     // Log
     NSString* newStr = [[NSString alloc] initWithData:keyData encoding:NSUTF8StringEncoding];
-    [self log:[NSString stringWithFormat:@"Send Key: %@, %@", keyData, newStr]];
+    [self trace:[NSString stringWithFormat:@"Send Key: %@, %@", keyData, newStr]];
     
     [_discoveredPeripheral writeValue:keyData forCharacteristic:[[[_discoveredPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
 }
@@ -313,7 +302,7 @@
     Byte byteData[10] = { 5, 5, 0, 0, second & 0xff, minute & 0xff, hour & 0xff, day & 0xff, month & 0xff, (year - 2000) & 0xff };
     
     data = [NSData dataWithBytes:byteData length:10];
-    [self log:[NSString stringWithFormat:@"Sync time = %@", data]];
+    [self trace:[NSString stringWithFormat:@"Sync time = %@", data]];
     
     [_discoveredPeripheral writeValue:data forCharacteristic:[[[_discoveredPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
     //    });
@@ -322,10 +311,10 @@
 
 - (void) verifyCheck {
     if (!_isVerified) {
-        [self log:@"Incorrect key. Disconnect"];
+        [self trace:@"Incorrect key. Disconnect"];
         
         // Notification has stopped
-        [self log:@"Cancel connection"];
+        [self trace:@"Cancel connection"];
         [_centralManager cancelPeripheralConnection:_discoveredPeripheral];
     }
 }
@@ -358,7 +347,7 @@
 // Result of write to peripheral
 - (void) peripheral:(CBPeripheral *)peripheral didWriteValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
 {
-    NSLog(@"MYLE BLE: Error = %@", error);
+    [self trace:@"MYLE BLE: Error = %@", error];
 }
 
 // Update value from peripheral
@@ -389,18 +378,18 @@
         unsigned int ml;
         
         [characteristic.value getBytes:&ml length:4];
-        [self log:[NSString stringWithFormat:@"Read record metadata: metadata length = %d", ml]];
+        [self trace:[NSString stringWithFormat:@"Read record metadata: metadata length = %d", ml]];
         
         [characteristic.value getBytes:&_dataLength range:NSMakeRange(4, 4)];
-        [self log:[NSString stringWithFormat:@"Read record metadata: audio length = %d", _dataLength]];
+        [self trace:[NSString stringWithFormat:@"Read record metadata: audio length = %d", _dataLength]];
         
         [characteristic.value getBytes:&_time range:NSMakeRange(8, 4)];
         
         NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
         [formatter setDateFormat:@"yyyy-MM-dd_HH:mm:ss"];
-        [self log:[NSString stringWithFormat:@"Read record metadata: record time = %@", [formatter stringFromDate:[self getDateFromInt:_time]]]];
+        [self trace:[NSString stringWithFormat:@"Read record metadata: record time = %@", [formatter stringFromDate:[self getDateFromInt:_time]]]];
         
-        [self log:@"Recieveing audio data..."];
+        [self trace:@"Recieveing audio data..."];
         
         _data = [[NSMutableData alloc] init];
         _isReceivingAudioFile = true;
@@ -408,13 +397,13 @@
     else if (_data.length < _dataLength)
     {
         [_data appendData:characteristic.value];
-        //NSLog(@"MYLE BLE: len = %d", _data.length);
+        //[self log:@"MYLE BLE: len = %d", _data.length);
         
         if (_data.length == _dataLength)
         {
             [peripheral setNotifyValue:NO forCharacteristic:characteristic];
             
-            [self log:@"Data recieved!"];
+            [self trace:@"Data recieved!"];
             
             NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
             [formatter setDateFormat:@"yyyy-MM-dd_HH-mm-ss"];
@@ -423,7 +412,7 @@
             NSString *docPath = [DocumentsPath() stringByAppendingPathComponent:filePath];
             [_data writeToFile:docPath atomically:YES];
             
-            [self log:[NSString stringWithFormat:@"File received = %@.wav", [formatter stringFromDate:[self getDateFromInt:_time]]]];
+            [self trace:[NSString stringWithFormat:@"File received = %@.wav", [formatter stringFromDate:[self getDateFromInt:_time]]]];
             
             // reset
             _dataLength = 0;
@@ -459,7 +448,7 @@
         
     {
         // Notification has stopped
-        [self log:@"Cancel connection"];
+        [self trace:@"Cancel connection"];
         [_centralManager cancelPeripheralConnection:peripheral];
     }
 }
@@ -477,7 +466,7 @@
         [self clearTapList];
         
         [_centralManager scanForPeripheralsWithServices:@[[CBUUID UUIDWithString:SERVICE_UUID]] options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
-        [self log:@"Scanning started"];
+        [self trace:@"Scanning started"];
     }
 }
 
@@ -512,37 +501,37 @@
     {
         [data getBytes:byteData range:NSMakeRange(@"5503RECLN".length, data.length-@"5503RECLN".length)];
         ret = true;
-        [self notifyListeners:@"RECLN" intValue:[self getFromBytes:byteData] strValue:nil];
+        [self notifyReadParameterListeners:@"RECLN" intValue:[self getFromBytes:byteData] strValue:nil];
     }
     else if (!([string rangeOfString:@"5503PAUSELEVEL"].location == NSNotFound))
     {
         [data getBytes:byteData range:NSMakeRange(@"5503PAUSELEVEL".length, data.length-@"5503PAUSELEVEL".length)];
         ret = true;
-        [self notifyListeners:@"PAUSELEVEL" intValue:[self getFromBytes:byteData] strValue:nil];
+        [self notifyReadParameterListeners:@"PAUSELEVEL" intValue:[self getFromBytes:byteData] strValue:nil];
     }
     else if (!([string rangeOfString:@"5503PAUSELEN"].location == NSNotFound))
     {
         [data getBytes:byteData range:NSMakeRange(@"5503PAUSELEN".length, data.length-@"5503PAUSELEN".length)];
         ret = true;
-        [self notifyListeners:@"PAUSELEN" intValue:[self getFromBytes:byteData] strValue:nil];
+        [self notifyReadParameterListeners:@"PAUSELEN" intValue:[self getFromBytes:byteData] strValue:nil];
     }
     else if (!([string rangeOfString:@"5503ACCELERSENS"].location == NSNotFound))
     {
         [data getBytes:byteData range:NSMakeRange(@"5503ACCELERSENS".length, data.length-@"5503ACCELERSENS".length)];
         ret = true;
-        [self notifyListeners:@"ACCELERSENS" intValue:[self getFromBytes:byteData] strValue:nil];
+        [self notifyReadParameterListeners:@"ACCELERSENS" intValue:[self getFromBytes:byteData] strValue:nil];
     }
     else if (!([string rangeOfString:@"5503BTLOC"].location == NSNotFound))
     {
         [data getBytes:byteData range:NSMakeRange(@"5503BTLOC".length, data.length-@"5503BTLOC".length)];
         ret = true;
-        [self notifyListeners:@"BTLOC" intValue:[self getFromBytes:byteData] strValue:nil];
+        [self notifyReadParameterListeners:@"BTLOC" intValue:[self getFromBytes:byteData] strValue:nil];
     }
     else if (!([string rangeOfString:@"5503MIC"].location == NSNotFound))
     {
         [data getBytes:byteData range:NSMakeRange(@"5503MIC".length, data.length-@"5503MIC".length)];
         ret = true;
-        [self notifyListeners:@"MIC" intValue:[self getFromBytes:byteData] strValue:nil];
+        [self notifyReadParameterListeners:@"MIC" intValue:[self getFromBytes:byteData] strValue:nil];
     }
     else if (!([string rangeOfString:@"5503VERSION"].location == NSNotFound))
     {
@@ -551,14 +540,14 @@
         [data getBytes:versionData range:NSMakeRange(@"5503VERSION".length + 1, data.length - @"5503VERSION".length - 1)];
         ret = true;
         NSString *version = [NSString stringWithUTF8String:(const char *)versionData];
-        NSLog(@"MYLE BLE: Device version received: %@", version);
-        [self notifyListeners:@"VERSION" intValue:0 strValue:version];
+        [self trace:@"MYLE BLE: Device version received: %@", version];
+        [self notifyReadParameterListeners:@"VERSION" intValue:0 strValue:version];
     }
     else if (!([string rangeOfString:@"CONNECTED"].location == NSNotFound))
     {
         _isVerified = true;
         ret= true;
-        [self log:@"Connected"];
+        [self trace:@"Connected"];
         
         [self syncTime];
         return ret;
@@ -566,7 +555,7 @@
     
     //[self log:[NSString stringWithFormat:@"%@ = %d", str, value]];
     
-    NSLog(@"MYLE BLE: ret = %d", ret);
+    [self trace:@"MYLE BLE: ret = %d", ret];
     return ret;
 }
 
@@ -678,23 +667,44 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 }
 
 
-- (void) addParameterReadListener:(Listener)listener
+- (void) addParameterReadListener:(ReadParameterListener)listener
 {
-    for (int i = 0; i < _listeners.count; i ++) {
-        if ((Listener)_listeners[i] == listener) {
-            // listener already added
-            return;
-        }
+    if (listener && ![_readParameterListeners containsObject:listener])
+    {
+        [_readParameterListeners addObject:listener];
     }
-    [_listeners addObject:listener];
 }
 
 
-- (void) notifyListeners:(NSString*)parameterName intValue:(NSUInteger)intValue strValue:(NSString*) strValue;
+- (void) notifyReadParameterListeners:(NSString*)parameterName intValue:(NSUInteger)intValue strValue:(NSString*) strValue
 {
-    for (Listener listener in _listeners) {
+    for (ReadParameterListener listener in _readParameterListeners) {
+        listener(parameterName, intValue, strValue);
+    }
+}
+
+
+- (void) addTraceListener:(TraceListener)listener
+{
+    if (listener != nil && ![_traceListeners containsObject:listener])
+    {
+        [_traceListeners addObject:listener];
+    }
+}
+
+
+- (void) trace:(NSString*)formatString, ...
+{
+    if (_traceListeners.count == 0) { return; }
+    
+    va_list args;
+    va_start(args, formatString);
+    NSString *message = [[NSString alloc] initWithFormat:formatString arguments:args];
+    va_end(args);
+    
+    for (TraceListener listener in _traceListeners) {
         if (listener) {
-            listener(parameterName, intValue, strValue);
+            listener(message);
         }
     }
 }

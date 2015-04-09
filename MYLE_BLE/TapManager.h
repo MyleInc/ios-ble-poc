@@ -10,7 +10,8 @@
 #import <CoreBluetooth/CoreBluetooth.h>
 
 
-typedef void (^Listener)(NSString*, NSUInteger, NSString*);
+typedef void (^ReadParameterListener)(NSString*, NSUInteger, NSString*);
+typedef void (^TraceListener)(NSString*);
 
 
 #define DEFAULT_TAP_PASSWORD            @"1234abcd"
@@ -35,7 +36,8 @@ typedef void (^Listener)(NSString*, NSUInteger, NSString*);
 
 - (void)connect : (CBPeripheral*)peripheral;
 
-- (void)addParameterReadListener:(Listener)listener;
+- (void)addParameterReadListener:(ReadParameterListener)listener;
+- (void)addTraceListener:(TraceListener)listener;
 
 - (void)sendWriteRECLN:(NSString *)value;
 - (void)sendWritePAUSELEVEL:(NSString *)value;

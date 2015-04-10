@@ -3,7 +3,7 @@
 //  CBTutorial
 //
 //  Created by cxphong-macmini on 12/20/14.
-//  Copyright (c) 2014 Mobiletuts. All rights reserved.
+//  Copyright (c) 2014 MYLE. All rights reserved.
 //
 
 #import "LoginViewController.h" 

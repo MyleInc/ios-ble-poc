@@ -27,6 +27,8 @@
     NSString *_currentUUID;
     NSString *_currentPass;
     
+    BOOL _isConnected;
+    
     NSMutableArray *_availableTaps;
     
     NSMutableData *_data;
@@ -101,11 +103,16 @@
 }
 
 
+- (BOOL)isConnected {
+    return _isConnected;
+}
+
+
 // Scan periphrals with specific service UUID
 - (void)scanPeripherals {
     [self clearTapList];
     
-    [_centralManager scanForPeripheralsWithServices:@[[CBUUID UUIDWithString:SERVICE_UUID]] options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
+    [_centralManager scanForPeripheralsWithServices:@[[CBUUID UUIDWithString:SERVICE_UUID]] options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @NO }];
     
     [self trace:@"Scan started"];
 }
@@ -222,6 +229,8 @@
     [_centralManager stopScan];
     
     [self trace:@"Connected to tap %@, stopped scanning", peripheral.identifier.UUIDString];
+    
+    _isConnected = YES;
     
     peripheral.delegate = self;
     
@@ -478,6 +487,8 @@
     _dataLength = 0;
     _isReceivingAudioFile = false;
     
+    _isConnected = NO;
+    
     [self trace:@"Disconnected from tap %@", peripheral.identifier.UUIDString];
     
     // Scan for devices again
@@ -485,7 +496,7 @@
     {
         [self clearTapList];
         
-        [_centralManager scanForPeripheralsWithServices:@[[CBUUID UUIDWithString:SERVICE_UUID]] options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
+        [_centralManager scanForPeripheralsWithServices:@[[CBUUID UUIDWithString:SERVICE_UUID]] options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @NO }];
         [self trace:@"Scanning started"];
     }
 }
@@ -676,7 +687,7 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 }
 
 
-- (NSString*)getCurrentPassword {
+- (NSString*)getCurrentTapPassword {
     return _currentPass;
 }
 

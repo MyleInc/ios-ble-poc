@@ -34,9 +34,8 @@
 
 
 - (void)readAll {
-    NSString *boardUUID = [_tap getCurrentTapUUID];
-    if (!boardUUID) {
-        NSLog(@"MYLE BLE: Tap not found");
+    if (![_tap isConnected]) {
+        NSLog(@"Tap not connected");
         
         UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Tap connection"
                                                         message:@"Tap is not found"
@@ -46,7 +45,7 @@
         return [alert show];
     }
     
-    self.tvUUID.text = boardUUID;
+    self.tvUUID.text = [_tap getCurrentTapUUID];
     
     [_tap sendReadRECLN];
     [_tap sendReadPAUSELEVEL];
@@ -57,7 +56,7 @@
     [_tap sendReadVERSION];
     
     // get current password
-    self.tfPASSWORD.text = [_tap getCurrentPassword];
+    self.tfPASSWORD.text = [_tap getCurrentTapPassword];
 }
 
 

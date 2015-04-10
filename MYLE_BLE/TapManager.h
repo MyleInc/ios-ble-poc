@@ -29,21 +29,34 @@ typedef void (^TraceListener)(NSString*);
 
 @interface TapManager : NSObject <CBCentralManagerDelegate, CBPeripheralDelegate>
 
+// Sets up tap manager with TAP UUID and password from last session
 + (void)setup:(NSString*)uuid pass:(NSString*)pass;
 
+// Seturns shared TapManager instance
 + (instancetype)shared;
 
+// Returns array of available taps
 - (NSArray*)getAvailableTaps;
 
+// Returns UUID of current or last connected TAP
 - (NSString*)getCurrentTapUUID;
 
-- (NSString*)getCurrentPassword;
+// Returns password of current or last connected TAP
+- (NSString*)getCurrentTapPassword;
 
+// Retunrns YES if a TAP is connected
+- (BOOL)isConnected;
+
+// Looks up for an available peripheral with given UUID
 - (CBPeripheral*)getPeripheralByUUID:(NSString*)uuid;
 
+// Connects to a peripheral with given pass
 - (void)connect: (CBPeripheral*)peripheral pass:(NSString*)pass;
 
+// Adds a listener for parameter read notification
 - (void)addParameterReadListener:(ReadParameterListener)listener;
+
+// Adds a listener for trace messafes
 - (void)addTraceListener:(TraceListener)listener;
 
 - (void)sendWriteRECLN:(NSString *)value;

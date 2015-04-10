@@ -692,6 +692,12 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 }
 
 
+- (void)forgetCurrent {
+    _currentUUID = nil;
+    _currentPass = nil;
+}
+
+
 - (void) addParameterReadListener:(ReadParameterListener)listener
 {
     if (listener && ![_readParameterListeners containsObject:listener])

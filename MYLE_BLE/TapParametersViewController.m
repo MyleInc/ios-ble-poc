@@ -114,7 +114,10 @@
     // Forget this device
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [defaults setValue:nil forKey:SETTINGS_PERIPHERAL_UUID];
+    [defaults setValue:nil forKey:SETTINGS_PERIPHERAL_PASS];
     [defaults synchronize];
+    
+    [_tap forgetCurrent];
     
     // Show notification
     UIAlertView *alert =[[UIAlertView alloc] initWithTitle: @"Reset complete"

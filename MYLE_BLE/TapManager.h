@@ -44,6 +44,9 @@ typedef void (^TraceListener)(NSString*);
 // Returns password of current or last connected TAP
 - (NSString*)getCurrentTapPassword;
 
+// Forgets current TAP UUID and password
+- (void)forgetCurrent;
+
 // Retunrns YES if a TAP is connected
 - (BOOL)isConnected;
 

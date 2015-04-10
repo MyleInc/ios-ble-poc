@@ -6,12 +6,12 @@
 //  Copyright (c) 2014 Mobiletuts. All rights reserved.
 //
 
-#import "ParameterViewController.h"
+#import "ParametersViewController.h"
 #import "TapManager.h"
 #import "Globals.h"
 
 
-@implementation ParameterViewController {
+@implementation ParametersViewController {
     TapManager *_tap;
 }
 
@@ -24,7 +24,7 @@
     _tap = [TapManager shared];
     
     // subscribe to tap parameter read notifications
-    ParameterViewController *this = self;
+    ParametersViewController *this = self;
     [_tap addParameterReadListener:^(NSString *par, NSUInteger intValue, NSString *strValue){
         [this onParameterRead:par intValue:intValue strValue:strValue];
     }];

@@ -6,18 +6,18 @@
 //  Copyright (c) 2014 Mobiletuts. All rights reserved.
 //
 
-#import "LauncherViewController.h" 
-#import "CBCentralManagerViewController.h"
+#import "LoginViewController.h" 
+#import "TraceViewController.h"
 #import "TapManager.h"
 #import "Globals.h"
 
 
-@interface LauncherViewController ()
+@interface LoginViewController ()
 
 @end
 
 
-@implementation LauncherViewController {
+@implementation LoginViewController {
     NSString *initialPassword;
 }
 

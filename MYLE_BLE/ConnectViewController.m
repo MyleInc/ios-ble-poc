@@ -6,13 +6,13 @@
 //  Copyright (c) 2015 Mobiletuts. All rights reserved.
 //
 
-#import "ScanViewController.h"
+#import "ConnectViewController.h"
 #import "Cell_Session.h"
 #import "TapManager.h"
 #import "Globals.h"
 
 
-@implementation ScanViewController {
+@implementation ConnectViewController {
     TapManager *_tap;
 }
 

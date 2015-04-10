@@ -11,7 +11,7 @@
 
 
 
-@interface LauncherViewController : UIViewController
+@interface LoginViewController : UIViewController
 
 
 @property (weak, nonatomic) IBOutlet UITextField *tfPassword;

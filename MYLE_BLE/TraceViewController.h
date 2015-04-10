@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import <CoreBluetooth/CoreBluetooth.h>
 
-@interface CBCentralManagerViewController : UIViewController
+@interface TraceViewController : UIViewController
 
 @property (weak, nonatomic) IBOutlet UITextView *tvLog;
 

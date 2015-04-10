@@ -1,10 +1,9 @@
-#import "CBCentralManagerViewController.h"
-#import "ParameterViewController.h"
-#import "LauncherViewController.h"
+#import "TraceViewController.h"
+#import "ParametersViewController.h"
 #import "TapManager.h"
 
 
-@implementation CBCentralManagerViewController
+@implementation TraceViewController
 
 
 - (void)viewDidLoad {

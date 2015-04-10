@@ -8,6 +8,6 @@
 
 #import <UIKit/UIKit.h>
 
-@interface ScanViewController : UITableViewController <UITableViewDelegate, UITableViewDataSource>
+@interface ConnectViewController : UITableViewController <UITableViewDelegate, UITableViewDataSource>
 
 @end

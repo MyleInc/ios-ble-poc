@@ -25,6 +25,8 @@
 		97B3B2791AD612B60086DC40 /* TapManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 97B3B2781AD612B60086DC40 /* TapManager.m */; };
 		97B3B27E1AD614E30086DC40 /* Globals.m in Sources */ = {isa = PBXBuildFile; fileRef = 97B3B27D1AD614E30086DC40 /* Globals.m */; };
 		97B3B2811AD639940086DC40 /* CustomView.m in Sources */ = {isa = PBXBuildFile; fileRef = 97B3B2801AD639940086DC40 /* CustomView.m */; };
+		97B3B28F1AD829500086DC40 /* Crashlytics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 97B3B28D1AD829500086DC40 /* Crashlytics.framework */; };
+		97B3B2901AD829500086DC40 /* Fabric.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 97B3B28E1AD829500086DC40 /* Fabric.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -63,6 +65,8 @@
 		97B3B27D1AD614E30086DC40 /* Globals.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Globals.m; sourceTree = "<group>"; };
 		97B3B27F1AD639940086DC40 /* CustomView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CustomView.h; sourceTree = "<group>"; };
 		97B3B2801AD639940086DC40 /* CustomView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CustomView.m; sourceTree = "<group>"; };
+		97B3B28D1AD829500086DC40 /* Crashlytics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Crashlytics.framework; sourceTree = "<group>"; };
+		97B3B28E1AD829500086DC40 /* Fabric.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Fabric.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -71,9 +75,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				639ACC84180EFBDC001F8505 /* CoreBluetooth.framework in Frameworks */,
+				97B3B28F1AD829500086DC40 /* Crashlytics.framework in Frameworks */,
 				6399F359180EF944005E5EE8 /* CoreGraphics.framework in Frameworks */,
 				6399F35B180EF944005E5EE8 /* UIKit.framework in Frameworks */,
 				6399F357180EF944005E5EE8 /* Foundation.framework in Frameworks */,
+				97B3B2901AD829500086DC40 /* Fabric.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -101,6 +107,8 @@
 		6399F355180EF944005E5EE8 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				97B3B28D1AD829500086DC40 /* Crashlytics.framework */,
+				97B3B28E1AD829500086DC40 /* Fabric.framework */,
 				639ACC83180EFBDC001F8505 /* CoreBluetooth.framework */,
 				6399F356180EF944005E5EE8 /* Foundation.framework */,
 				6399F358180EF944005E5EE8 /* CoreGraphics.framework */,
@@ -180,6 +188,7 @@
 				6399F34F180EF944005E5EE8 /* Sources */,
 				6399F350180EF944005E5EE8 /* Frameworks */,
 				6399F351180EF944005E5EE8 /* Resources */,
+				97B3B28C1AD828E30086DC40 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -197,7 +206,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastUpgradeCheck = 0500;
-				ORGANIZATIONNAME = Mobiletuts;
+				ORGANIZATIONNAME = "MYLE Electornics Corp.";
 				TargetAttributes = {
 					6399F352180EF944005E5EE8 = {
 						DevelopmentTeam = A9Y4D5WEPV;
@@ -235,6 +244,22 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		97B3B28C1AD828E30086DC40 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 8;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+			shellPath = "./Fabric.framework/run e39a4db5a227d68508c20229997263a34f5225af 1686e13f41514e487c6c6b19c71e4298fbd5f55faa79d860c076e706d97174c4";
+			shellScript = "";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		6399F34F180EF944005E5EE8 /* Sources */ = {
@@ -363,6 +388,10 @@
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MYLE_BLE/MYLE-Prefix.pch";
 				INFOPLIST_FILE = "MYLE_BLE/MYLE-Info.plist";
@@ -380,6 +409,10 @@
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MYLE_BLE/MYLE-Prefix.pch";
 				INFOPLIST_FILE = "MYLE_BLE/MYLE-Info.plist";

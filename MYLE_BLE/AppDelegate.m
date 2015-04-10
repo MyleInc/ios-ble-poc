@@ -10,11 +10,16 @@
 #import <AVFoundation/AVAudioSession.h>
 #import "TapManager.h"
 #import "Globals.h"
+#import <Fabric/Fabric.h>
+#import <Crashlytics/Crashlytics.h>
+
 
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+    [Fabric with:@[CrashlyticsKit]];
+
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [TapManager setup:[defaults valueForKey:SETTINGS_PERIPHERAL_UUID] pass:[defaults valueForKey:SETTINGS_PERIPHERAL_PASS]];
     return YES;

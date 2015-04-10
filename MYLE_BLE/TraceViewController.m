@@ -1,5 +1,5 @@
 #import "TraceViewController.h"
-#import "ParametersViewController.h"
+#import "TapParametersViewController.h"
 #import "TapManager.h"
 
 

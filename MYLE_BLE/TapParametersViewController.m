@@ -6,12 +6,12 @@
 //  Copyright (c) 2014 MYLE. All rights reserved.
 //
 
-#import "ParametersViewController.h"
+#import "TapParametersViewController.h"
 #import "TapManager.h"
 #import "Globals.h"
 
 
-@implementation ParametersViewController {
+@implementation TapParametersViewController {
     TapManager *_tap;
 }
 
@@ -24,7 +24,7 @@
     _tap = [TapManager shared];
     
     // subscribe to tap parameter read notifications
-    ParametersViewController *this = self;
+    TapParametersViewController *this = self;
     [_tap addParameterReadListener:^(NSString *par, NSUInteger intValue, NSString *strValue){
         [this onParameterRead:par intValue:intValue strValue:strValue];
     }];
@@ -76,7 +76,7 @@
     } else if ([par isEqual: @"BTLOC"]) {
         self.tfBTLOC.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
     } else if ([par isEqual: @"VERSION"]) {
-        NSLog(@"MYLE BLE: OK = \"%@\"", strValue);
+        NSLog(@"OK = \"%@\"", strValue);
         self.tfVERSION.text = strValue;
     }
 }

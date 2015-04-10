@@ -6,18 +6,18 @@
 //  Copyright (c) 2014 MYLE. All rights reserved.
 //
 
-#import "LoginViewController.h" 
+#import "TapLoginViewController.h" 
 #import "TraceViewController.h"
 #import "TapManager.h"
 #import "Globals.h"
 
 
-@interface LoginViewController ()
+@interface TapLoginViewController ()
 
 @end
 
 
-@implementation LoginViewController {
+@implementation TapLoginViewController {
     NSString *initialPassword;
 }
 

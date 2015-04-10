@@ -8,6 +8,6 @@
 
 #import <UIKit/UIKit.h>
 
-@interface ConnectViewController : UITableViewController <UITableViewDelegate, UITableViewDataSource>
+@interface TapConnectViewController : UITableViewController <UITableViewDelegate, UITableViewDataSource>
 
 @end

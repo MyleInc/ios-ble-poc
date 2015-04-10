@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-@interface ParametersViewController : UIViewController <UITextFieldDelegate>
+@interface TapParametersViewController : UIViewController <UITextFieldDelegate>
 
 
 @property (weak, nonatomic) IBOutlet UITextField *tfRECLN;

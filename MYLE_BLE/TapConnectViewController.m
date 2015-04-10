@@ -6,13 +6,13 @@
 //  Copyright (c) 2015 MYLE. All rights reserved.
 //
 
-#import "ConnectViewController.h"
-#import "Cell_Session.h"
+#import "TapConnectViewController.h"
+#import "TapConnectCell.h"
 #import "TapManager.h"
 #import "Globals.h"
 
 
-@implementation ConnectViewController {
+@implementation TapConnectViewController {
     TapManager *_tap;
 }
 
@@ -65,10 +65,10 @@
     // Custom cell
     static NSString *simpleTableIdentifier = @"Cell";
     
-    Cell_Session *cell = (Cell_Session *)[tableView dequeueReusableCellWithIdentifier:simpleTableIdentifier];
+    TapConnectCell *cell = (TapConnectCell *)[tableView dequeueReusableCellWithIdentifier:simpleTableIdentifier];
     if (cell == nil)
     {
-        NSArray *nib = [[NSBundle mainBundle] loadNibNamed:@"Cell_Session" owner:self options:nil];
+        NSArray *nib = [[NSBundle mainBundle] loadNibNamed:@"TapConnectCell" owner:self options:nil];
         cell = [nib objectAtIndex:0];
     }
     

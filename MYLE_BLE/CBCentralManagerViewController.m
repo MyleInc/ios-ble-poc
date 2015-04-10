@@ -10,6 +10,8 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
+    self.navigationItem.title = @"Trace";
+    
     // Add "Connect" button to the NavigationBar
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Connect"
                                                                               style:UIBarButtonItemStylePlain

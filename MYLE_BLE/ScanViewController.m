@@ -20,6 +20,8 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
+    self.navigationItem.title = @"Connect";
+    
     _tap = [TapManager shared];
     
     [self.tableView reloadData];

@@ -19,6 +19,8 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
+    self.navigationItem.title = @"Parameters";
+    
     _tap = [TapManager shared];
     
     // subscribe to tap parameter read notifications
@@ -96,7 +98,7 @@
 
 
 // Format String to match specified number of characters
-- (NSString *) formatString:(NSString *)data numberDigit: (NSUInteger)num {
+- (NSString *)formatString:(NSString *)data numberDigit: (NSUInteger)num {
     if (data.length == num) { return data; }
     
     NSMutableString *ms = [data mutableCopy];

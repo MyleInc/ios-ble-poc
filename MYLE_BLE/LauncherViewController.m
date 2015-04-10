@@ -25,6 +25,8 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
+    self.navigationItem.title = @"Login";
+    
     self.tfPassword.text = DEFAULT_TAP_PASSWORD;
 }
 
@@ -42,10 +44,6 @@
     
     if([self respondsToSelector:@selector(edgesForExtendedLayout)])
         [self setEdgesForExtendedLayout:UIRectEdgeBottom];
-    
-    /** Set title Navigation ControlBar*/
-    UINavigationController *navCon  = (UINavigationController*) [self.navigationController.viewControllers objectAtIndex:0];
-    navCon.navigationItem.title = @"Login to Tap";
 }
 
 

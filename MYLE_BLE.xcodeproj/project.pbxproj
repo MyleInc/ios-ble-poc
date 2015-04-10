@@ -57,7 +57,7 @@
 		6399F381180EF944005E5EE8 /* MYLE_BLETests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MYLE_BLETests.m; sourceTree = "<group>"; };
 		6399F38B180EF9E8005E5EE8 /* TraceViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TraceViewController.h; sourceTree = "<group>"; };
 		6399F38C180EF9E8005E5EE8 /* TraceViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TraceViewController.m; sourceTree = "<group>"; };
-		6399F391180EFA0B005E5EE8 /* Services.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Services.h; sourceTree = "<group>"; };
+		6399F391180EFA0B005E5EE8 /* TapServices.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TapServices.h; sourceTree = "<group>"; };
 		639ACC83180EFBDC001F8505 /* CoreBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreBluetooth.framework; path = System/Library/Frameworks/CoreBluetooth.framework; sourceTree = SDKROOT; };
 		97B3B2771AD612B60086DC40 /* TapManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TapManager.h; sourceTree = "<group>"; };
 		97B3B2781AD612B60086DC40 /* TapManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TapManager.m; sourceTree = "<group>"; };
@@ -135,7 +135,7 @@
 				6399F368180EF944005E5EE8 /* Main.storyboard */,
 				6399F38B180EF9E8005E5EE8 /* TraceViewController.h */,
 				6399F38C180EF9E8005E5EE8 /* TraceViewController.m */,
-				6399F391180EFA0B005E5EE8 /* Services.h */,
+				6399F391180EFA0B005E5EE8 /* TapServices.h */,
 				6399F36E180EF944005E5EE8 /* Images.xcassets */,
 				6399F35D180EF944005E5EE8 /* Supporting Files */,
 				24C670CC1A45C28E008715DE /* LoginViewController.h */,

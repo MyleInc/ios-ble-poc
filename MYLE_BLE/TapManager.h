@@ -27,6 +27,14 @@ typedef void (^TraceListener)(NSString*);
 #define kTapNtfnTypeFile                3 // recieved a file
 
 
+typedef enum _RECEIVE_MODE RECEIVE_MODE;
+enum _RECEIVE_MODE {
+    RECEIVE_AUDIO_FILE = 30,
+    RECEIVE_LOG_FILE,
+    RECEIVE_NONE
+};
+
+
 @interface TapManager : NSObject <CBCentralManagerDelegate, CBPeripheralDelegate>
 
 // Sets up tap manager with TAP UUID and password from last session

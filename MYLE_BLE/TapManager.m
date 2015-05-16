@@ -49,6 +49,8 @@
     
     NSMutableArray *_readParameterListeners;
     NSMutableArray *_traceListeners;
+    
+    float _progress;
 }
 
 
@@ -449,6 +451,7 @@
 - (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error
 {
     _currentPeripheral = nil;
+    _progress = 0;
     _audioLength = 0;
     _isReceivingAudioFile = false;
     _logLength = 0;
@@ -592,11 +595,17 @@
         
         _audioBuffer = [[NSMutableData alloc] init];
         _isReceivingAudioFile = true;
+        _progress = 0;
     }
     else if (_audioBuffer.length < _audioLength)
     {
         [_audioBuffer appendData:characteristic.value];
-        //[self log:@"len = %d", _data.length);
+        
+        float currentProgress = (float)_audioBuffer.length / (float)_audioLength;
+        if (fabsf(currentProgress - _progress) >= PROGRESS_LOG_DELTA || _audioBuffer.length == _audioLength) {
+            _progress = currentProgress;
+            [self trace:@"Received %d%%", (int)(_progress * 100.0f)];
+        }
         
         if (_audioBuffer.length == _audioLength)
         {
@@ -615,6 +624,7 @@
             
             // reset
             _audioLength = 0;
+            _progress = 0;
             _isReceivingAudioFile = false;
             
             // notify subscribers about new file appearence

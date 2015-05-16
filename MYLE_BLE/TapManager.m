@@ -674,7 +674,7 @@
             [formatter setDateFormat:@"yyyy-MM-dd_HH-mm-ss"];
             NSString *filePath = [NSString stringWithFormat:@"Documents/%@_log.txt", [formatter stringFromDate:[self getDateFromInt:_logCreatedTime]]];
             
-            NSString *docPath = [NSHomeDirectory() stringByAppendingPathComponent:filePath];
+            NSString *docPath = [DocumentsPath() stringByAppendingPathComponent:filePath];
             [_logBuffer writeToFile:docPath atomically:YES];
             
             [self trace:[NSString stringWithFormat:@"File received = %@_log.txt", [formatter stringFromDate:[self getDateFromInt:_logCreatedTime]]]];

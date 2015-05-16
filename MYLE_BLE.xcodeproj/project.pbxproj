@@ -7,13 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		241F61981A4BCE4F00C582FA /* ParameterViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 241F61971A4BCE4F00C582FA /* ParameterViewController.m */; };
-		24C670CE1A45C28E008715DE /* LauncherViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 24C670CD1A45C28E008715DE /* LauncherViewController.m */; };
-		24DDB18E1AC54CFF003D0B0C /* ScanViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 24DDB18D1AC54CFF003D0B0C /* ScanViewController.m */; };
-		24DDB1911AC54D2F003D0B0C /* BluetoothManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 24DDB1901AC54D2F003D0B0C /* BluetoothManager.m */; };
-		24DDB1941AC5AF52003D0B0C /* ScanDeviceInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 24DDB1931AC5AF52003D0B0C /* ScanDeviceInfo.m */; };
-		24DDB1981AC5B2A1003D0B0C /* Cell_Session.m in Sources */ = {isa = PBXBuildFile; fileRef = 24DDB1961AC5B2A1003D0B0C /* Cell_Session.m */; };
-		24DDB1991AC5B2A1003D0B0C /* Cell_Session.xib in Resources */ = {isa = PBXBuildFile; fileRef = 24DDB1971AC5B2A1003D0B0C /* Cell_Session.xib */; };
+		241F61981A4BCE4F00C582FA /* TapParametersViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 241F61971A4BCE4F00C582FA /* TapParametersViewController.m */; };
+		24C670CE1A45C28E008715DE /* TapLoginViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 24C670CD1A45C28E008715DE /* TapLoginViewController.m */; };
+		24DDB18E1AC54CFF003D0B0C /* TapConnectViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 24DDB18D1AC54CFF003D0B0C /* TapConnectViewController.m */; };
+		24DDB1981AC5B2A1003D0B0C /* TapConnectCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 24DDB1961AC5B2A1003D0B0C /* TapConnectCell.m */; };
+		24DDB1991AC5B2A1003D0B0C /* TapConnectCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 24DDB1971AC5B2A1003D0B0C /* TapConnectCell.xib */; };
 		6399F357180EF944005E5EE8 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6399F356180EF944005E5EE8 /* Foundation.framework */; };
 		6399F359180EF944005E5EE8 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6399F358180EF944005E5EE8 /* CoreGraphics.framework */; };
 		6399F35B180EF944005E5EE8 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6399F35A180EF944005E5EE8 /* UIKit.framework */; };
@@ -22,24 +20,25 @@
 		6399F367180EF944005E5EE8 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 6399F366180EF944005E5EE8 /* AppDelegate.m */; };
 		6399F36A180EF944005E5EE8 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6399F368180EF944005E5EE8 /* Main.storyboard */; };
 		6399F36F180EF944005E5EE8 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6399F36E180EF944005E5EE8 /* Images.xcassets */; };
-		6399F38D180EF9E8005E5EE8 /* CBCentralManagerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 6399F38C180EF9E8005E5EE8 /* CBCentralManagerViewController.m */; };
+		6399F38D180EF9E8005E5EE8 /* TraceViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 6399F38C180EF9E8005E5EE8 /* TraceViewController.m */; };
 		639ACC84180EFBDC001F8505 /* CoreBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 639ACC83180EFBDC001F8505 /* CoreBluetooth.framework */; };
+		97B3B2791AD612B60086DC40 /* TapManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 97B3B2781AD612B60086DC40 /* TapManager.m */; };
+		97B3B27E1AD614E30086DC40 /* Globals.m in Sources */ = {isa = PBXBuildFile; fileRef = 97B3B27D1AD614E30086DC40 /* Globals.m */; };
+		97B3B2811AD639940086DC40 /* CustomView.m in Sources */ = {isa = PBXBuildFile; fileRef = 97B3B2801AD639940086DC40 /* CustomView.m */; };
+		97B3B28F1AD829500086DC40 /* Crashlytics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 97B3B28D1AD829500086DC40 /* Crashlytics.framework */; };
+		97B3B2901AD829500086DC40 /* Fabric.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 97B3B28E1AD829500086DC40 /* Fabric.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		241F61961A4BCE4F00C582FA /* ParameterViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ParameterViewController.h; sourceTree = "<group>"; };
-		241F61971A4BCE4F00C582FA /* ParameterViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ParameterViewController.m; sourceTree = "<group>"; };
-		24C670CC1A45C28E008715DE /* LauncherViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LauncherViewController.h; sourceTree = "<group>"; };
-		24C670CD1A45C28E008715DE /* LauncherViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LauncherViewController.m; sourceTree = "<group>"; };
-		24DDB18C1AC54CFF003D0B0C /* ScanViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ScanViewController.h; sourceTree = "<group>"; };
-		24DDB18D1AC54CFF003D0B0C /* ScanViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ScanViewController.m; sourceTree = "<group>"; };
-		24DDB18F1AC54D2F003D0B0C /* BluetoothManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BluetoothManager.h; sourceTree = "<group>"; };
-		24DDB1901AC54D2F003D0B0C /* BluetoothManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BluetoothManager.m; sourceTree = "<group>"; };
-		24DDB1921AC5AF52003D0B0C /* ScanDeviceInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ScanDeviceInfo.h; sourceTree = "<group>"; };
-		24DDB1931AC5AF52003D0B0C /* ScanDeviceInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ScanDeviceInfo.m; sourceTree = "<group>"; };
-		24DDB1951AC5B2A1003D0B0C /* Cell_Session.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Cell_Session.h; sourceTree = "<group>"; };
-		24DDB1961AC5B2A1003D0B0C /* Cell_Session.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Cell_Session.m; sourceTree = "<group>"; };
-		24DDB1971AC5B2A1003D0B0C /* Cell_Session.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = Cell_Session.xib; sourceTree = "<group>"; };
+		241F61961A4BCE4F00C582FA /* TapParametersViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TapParametersViewController.h; sourceTree = "<group>"; };
+		241F61971A4BCE4F00C582FA /* TapParametersViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TapParametersViewController.m; sourceTree = "<group>"; };
+		24C670CC1A45C28E008715DE /* TapLoginViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TapLoginViewController.h; sourceTree = "<group>"; };
+		24C670CD1A45C28E008715DE /* TapLoginViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TapLoginViewController.m; sourceTree = "<group>"; };
+		24DDB18C1AC54CFF003D0B0C /* TapConnectViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TapConnectViewController.h; sourceTree = "<group>"; };
+		24DDB18D1AC54CFF003D0B0C /* TapConnectViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TapConnectViewController.m; sourceTree = "<group>"; };
+		24DDB1951AC5B2A1003D0B0C /* TapConnectCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TapConnectCell.h; sourceTree = "<group>"; };
+		24DDB1961AC5B2A1003D0B0C /* TapConnectCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TapConnectCell.m; sourceTree = "<group>"; };
+		24DDB1971AC5B2A1003D0B0C /* TapConnectCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = TapConnectCell.xib; sourceTree = "<group>"; };
 		6399F353180EF944005E5EE8 /* BLE Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "BLE Demo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6399F356180EF944005E5EE8 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		6399F358180EF944005E5EE8 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -56,10 +55,18 @@
 		6399F37D180EF944005E5EE8 /* MYLE_BLETests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "MYLE_BLETests-Info.plist"; sourceTree = "<group>"; };
 		6399F37F180EF944005E5EE8 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		6399F381180EF944005E5EE8 /* MYLE_BLETests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MYLE_BLETests.m; sourceTree = "<group>"; };
-		6399F38B180EF9E8005E5EE8 /* CBCentralManagerViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CBCentralManagerViewController.h; sourceTree = "<group>"; };
-		6399F38C180EF9E8005E5EE8 /* CBCentralManagerViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CBCentralManagerViewController.m; sourceTree = "<group>"; };
-		6399F391180EFA0B005E5EE8 /* SERVICES.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SERVICES.h; sourceTree = "<group>"; };
+		6399F38B180EF9E8005E5EE8 /* TraceViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TraceViewController.h; sourceTree = "<group>"; };
+		6399F38C180EF9E8005E5EE8 /* TraceViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TraceViewController.m; sourceTree = "<group>"; };
+		6399F391180EFA0B005E5EE8 /* TapServices.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TapServices.h; sourceTree = "<group>"; };
 		639ACC83180EFBDC001F8505 /* CoreBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreBluetooth.framework; path = System/Library/Frameworks/CoreBluetooth.framework; sourceTree = SDKROOT; };
+		97B3B2771AD612B60086DC40 /* TapManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TapManager.h; sourceTree = "<group>"; };
+		97B3B2781AD612B60086DC40 /* TapManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TapManager.m; sourceTree = "<group>"; };
+		97B3B27C1AD614E30086DC40 /* Globals.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Globals.h; sourceTree = "<group>"; };
+		97B3B27D1AD614E30086DC40 /* Globals.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Globals.m; sourceTree = "<group>"; };
+		97B3B27F1AD639940086DC40 /* CustomView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CustomView.h; sourceTree = "<group>"; };
+		97B3B2801AD639940086DC40 /* CustomView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CustomView.m; sourceTree = "<group>"; };
+		97B3B28D1AD829500086DC40 /* Crashlytics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Crashlytics.framework; sourceTree = "<group>"; };
+		97B3B28E1AD829500086DC40 /* Fabric.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Fabric.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,9 +75,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				639ACC84180EFBDC001F8505 /* CoreBluetooth.framework in Frameworks */,
+				97B3B28F1AD829500086DC40 /* Crashlytics.framework in Frameworks */,
 				6399F359180EF944005E5EE8 /* CoreGraphics.framework in Frameworks */,
 				6399F35B180EF944005E5EE8 /* UIKit.framework in Frameworks */,
 				6399F357180EF944005E5EE8 /* Foundation.framework in Frameworks */,
+				97B3B2901AD829500086DC40 /* Fabric.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -98,6 +107,8 @@
 		6399F355180EF944005E5EE8 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				97B3B28D1AD829500086DC40 /* Crashlytics.framework */,
+				97B3B28E1AD829500086DC40 /* Fabric.framework */,
 				639ACC83180EFBDC001F8505 /* CoreBluetooth.framework */,
 				6399F356180EF944005E5EE8 /* Foundation.framework */,
 				6399F358180EF944005E5EE8 /* CoreGraphics.framework */,
@@ -110,27 +121,29 @@
 		6399F35C180EF944005E5EE8 /* MYLE */ = {
 			isa = PBXGroup;
 			children = (
-				24DDB1951AC5B2A1003D0B0C /* Cell_Session.h */,
-				24DDB1961AC5B2A1003D0B0C /* Cell_Session.m */,
-				24DDB1971AC5B2A1003D0B0C /* Cell_Session.xib */,
+				97B3B27F1AD639940086DC40 /* CustomView.h */,
+				97B3B2801AD639940086DC40 /* CustomView.m */,
+				97B3B27C1AD614E30086DC40 /* Globals.h */,
+				97B3B27D1AD614E30086DC40 /* Globals.m */,
+				97B3B2771AD612B60086DC40 /* TapManager.h */,
+				97B3B2781AD612B60086DC40 /* TapManager.m */,
+				24DDB1951AC5B2A1003D0B0C /* TapConnectCell.h */,
+				24DDB1961AC5B2A1003D0B0C /* TapConnectCell.m */,
+				24DDB1971AC5B2A1003D0B0C /* TapConnectCell.xib */,
 				6399F365180EF944005E5EE8 /* AppDelegate.h */,
 				6399F366180EF944005E5EE8 /* AppDelegate.m */,
 				6399F368180EF944005E5EE8 /* Main.storyboard */,
-				6399F38B180EF9E8005E5EE8 /* CBCentralManagerViewController.h */,
-				6399F38C180EF9E8005E5EE8 /* CBCentralManagerViewController.m */,
-				6399F391180EFA0B005E5EE8 /* SERVICES.h */,
+				6399F38B180EF9E8005E5EE8 /* TraceViewController.h */,
+				6399F38C180EF9E8005E5EE8 /* TraceViewController.m */,
+				6399F391180EFA0B005E5EE8 /* TapServices.h */,
 				6399F36E180EF944005E5EE8 /* Images.xcassets */,
 				6399F35D180EF944005E5EE8 /* Supporting Files */,
-				24C670CC1A45C28E008715DE /* LauncherViewController.h */,
-				24C670CD1A45C28E008715DE /* LauncherViewController.m */,
-				241F61961A4BCE4F00C582FA /* ParameterViewController.h */,
-				241F61971A4BCE4F00C582FA /* ParameterViewController.m */,
-				24DDB18C1AC54CFF003D0B0C /* ScanViewController.h */,
-				24DDB18D1AC54CFF003D0B0C /* ScanViewController.m */,
-				24DDB18F1AC54D2F003D0B0C /* BluetoothManager.h */,
-				24DDB1901AC54D2F003D0B0C /* BluetoothManager.m */,
-				24DDB1921AC5AF52003D0B0C /* ScanDeviceInfo.h */,
-				24DDB1931AC5AF52003D0B0C /* ScanDeviceInfo.m */,
+				24C670CC1A45C28E008715DE /* TapLoginViewController.h */,
+				24C670CD1A45C28E008715DE /* TapLoginViewController.m */,
+				241F61961A4BCE4F00C582FA /* TapParametersViewController.h */,
+				241F61971A4BCE4F00C582FA /* TapParametersViewController.m */,
+				24DDB18C1AC54CFF003D0B0C /* TapConnectViewController.h */,
+				24DDB18D1AC54CFF003D0B0C /* TapConnectViewController.m */,
 			);
 			name = MYLE;
 			path = MYLE_BLE;
@@ -175,6 +188,7 @@
 				6399F34F180EF944005E5EE8 /* Sources */,
 				6399F350180EF944005E5EE8 /* Frameworks */,
 				6399F351180EF944005E5EE8 /* Resources */,
+				97B3B28C1AD828E30086DC40 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -192,10 +206,10 @@
 			isa = PBXProject;
 			attributes = {
 				LastUpgradeCheck = 0500;
-				ORGANIZATIONNAME = Mobiletuts;
+				ORGANIZATIONNAME = "MYLE Electornics Corp.";
 				TargetAttributes = {
 					6399F352180EF944005E5EE8 = {
-						DevelopmentTeam = 3K7G9X4S5C;
+						DevelopmentTeam = A9Y4D5WEPV;
 					};
 				};
 			};
@@ -222,7 +236,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				24DDB1991AC5B2A1003D0B0C /* Cell_Session.xib in Resources */,
+				24DDB1991AC5B2A1003D0B0C /* TapConnectCell.xib in Resources */,
 				6399F36F180EF944005E5EE8 /* Images.xcassets in Resources */,
 				6399F361180EF944005E5EE8 /* InfoPlist.strings in Resources */,
 				6399F36A180EF944005E5EE8 /* Main.storyboard in Resources */,
@@ -231,19 +245,36 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		97B3B28C1AD828E30086DC40 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 8;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+			shellPath = "./Fabric.framework/run e39a4db5a227d68508c20229997263a34f5225af 1686e13f41514e487c6c6b19c71e4298fbd5f55faa79d860c076e706d97174c4";
+			shellScript = "";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		6399F34F180EF944005E5EE8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				24C670CE1A45C28E008715DE /* LauncherViewController.m in Sources */,
-				24DDB18E1AC54CFF003D0B0C /* ScanViewController.m in Sources */,
+				97B3B27E1AD614E30086DC40 /* Globals.m in Sources */,
+				24C670CE1A45C28E008715DE /* TapLoginViewController.m in Sources */,
+				24DDB18E1AC54CFF003D0B0C /* TapConnectViewController.m in Sources */,
 				6399F367180EF944005E5EE8 /* AppDelegate.m in Sources */,
-				24DDB1911AC54D2F003D0B0C /* BluetoothManager.m in Sources */,
-				24DDB1981AC5B2A1003D0B0C /* Cell_Session.m in Sources */,
-				24DDB1941AC5AF52003D0B0C /* ScanDeviceInfo.m in Sources */,
-				6399F38D180EF9E8005E5EE8 /* CBCentralManagerViewController.m in Sources */,
-				241F61981A4BCE4F00C582FA /* ParameterViewController.m in Sources */,
+				24DDB1981AC5B2A1003D0B0C /* TapConnectCell.m in Sources */,
+				97B3B2811AD639940086DC40 /* CustomView.m in Sources */,
+				6399F38D180EF9E8005E5EE8 /* TraceViewController.m in Sources */,
+				97B3B2791AD612B60086DC40 /* TapManager.m in Sources */,
+				241F61981A4BCE4F00C582FA /* TapParametersViewController.m in Sources */,
 				6399F363180EF944005E5EE8 /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -357,10 +388,14 @@
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MYLE_BLE/MYLE-Prefix.pch";
 				INFOPLIST_FILE = "MYLE_BLE/MYLE-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 8.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				PRODUCT_NAME = "BLE Demo";
 				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = app;
@@ -374,10 +409,14 @@
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MYLE_BLE/MYLE-Prefix.pch";
 				INFOPLIST_FILE = "MYLE_BLE/MYLE-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 8.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				PRODUCT_NAME = "BLE Demo";
 				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = app;

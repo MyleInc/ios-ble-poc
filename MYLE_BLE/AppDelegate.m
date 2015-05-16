@@ -3,16 +3,25 @@
 //  CBTutorial
 //
 //  Created by Orlando Pereira on 10/8/13.
-//  Copyright (c) 2013 Mobiletuts. All rights reserved.
+//  Copyright (c) 2013 MYLE. All rights reserved.
 //
 
 #import "AppDelegate.h"
 #import <AVFoundation/AVAudioSession.h>
+#import "TapManager.h"
+#import "Globals.h"
+#import <Fabric/Fabric.h>
+#import <Crashlytics/Crashlytics.h>
+
 
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+    [Fabric with:@[CrashlyticsKit]];
+
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [TapManager setup:[defaults valueForKey:SETTINGS_PERIPHERAL_UUID] pass:[defaults valueForKey:SETTINGS_PERIPHERAL_PASS]];
     return YES;
 }
 							

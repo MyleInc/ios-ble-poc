@@ -26,6 +26,16 @@ typedef void (^TraceListener)(NSString*);
 #define kTapNtfnTypeStatus              2 // connection status
 #define kTapNtfnTypeFile                3 // recieved a file
 
+#define PROGRESS_LOG_DELTA              0.1f
+
+
+typedef enum _RECEIVE_MODE RECEIVE_MODE;
+enum _RECEIVE_MODE {
+    RECEIVE_AUDIO_FILE = 30,
+    RECEIVE_LOG_FILE,
+    RECEIVE_NONE
+};
+
 
 @interface TapManager : NSObject <CBCentralManagerDelegate, CBPeripheralDelegate>
 

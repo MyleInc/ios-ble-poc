@@ -626,6 +626,7 @@
             _audioLength = 0;
             _progress = 0;
             _isReceivingAudioFile = false;
+            _receiveMode = RECEIVE_NONE;
             
             // notify subscribers about new file appearence
             [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
@@ -682,6 +683,7 @@
             // Reset
             _logLength = 0;
             _isReceivingLogFile = false;
+            _receiveMode = RECEIVE_NONE;
         }
     }
 }

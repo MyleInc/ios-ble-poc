@@ -31,17 +31,26 @@
     
     NSMutableArray *_availableTaps;
     
-    NSMutableData *_data;
-    unsigned int _dataLength;
-    unsigned int _time;
+    RECEIVE_MODE _receiveMode;
+    
+    NSMutableData *_audioBuffer;
+    unsigned int _audioLength;
+    unsigned int _audioRecordedTime;
+    
+    NSMutableData *_logBuffer;
+    unsigned int _logLength;
+    unsigned int _logCreatedTime;
     
     Boolean _isVerified;
     Boolean _isDropListSetVisible;
     Boolean _isDropListReadVisible;
     Boolean _isReceivingAudioFile;
+    Boolean _isReceivingLogFile;
     
     NSMutableArray *_readParameterListeners;
     NSMutableArray *_traceListeners;
+    
+    float _progress;
 }
 
 
@@ -383,11 +392,11 @@
     }
     
     /*********** RECEIVE PARAMETER VALUE ***************/
-    if (!_isReceivingAudioFile) {
-        if([self readParameter:characteristic.value]) return;
+    if (!_isReceivingAudioFile && !_isReceivingLogFile) {
+        if([self readParameter:characteristic.value]) { return; }
     }
     
-    /*********** RECEIVE AUDIO FILE ********************/
+    /*********** RECEIVE AUDIO FILE OR LOG FILE ********************/
     
     // Send back to peripheral number of bytes received.
     NSInteger numBytes = characteristic.value.length;
@@ -395,56 +404,14 @@
     
     [_currentPeripheral writeValue:data forCharacteristic:[[[_currentPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
     
-    if (_dataLength == 0) // First packet
-    {
-        unsigned int ml;
-        
-        [characteristic.value getBytes:&ml length:4];
-        [self trace:[NSString stringWithFormat:@"Read record metadata: metadata length = %d", ml]];
-        
-        [characteristic.value getBytes:&_dataLength range:NSMakeRange(4, 4)];
-        [self trace:[NSString stringWithFormat:@"Read record metadata: audio length = %d", _dataLength]];
-        
-        [characteristic.value getBytes:&_time range:NSMakeRange(8, 4)];
-        
-        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-        [formatter setDateFormat:@"yyyy-MM-dd_HH:mm:ss"];
-        [self trace:[NSString stringWithFormat:@"Read record metadata: record time = %@", [formatter stringFromDate:[self getDateFromInt:_time]]]];
-        
-        [self trace:@"Recieveing audio data..."];
-        
-        _data = [[NSMutableData alloc] init];
-        _isReceivingAudioFile = true;
-    }
-    else if (_data.length < _dataLength)
-    {
-        [_data appendData:characteristic.value];
-        //[self log:@"len = %d", _data.length);
-        
-        if (_data.length == _dataLength)
-        {
-            [peripheral setNotifyValue:NO forCharacteristic:characteristic];
-            
-            [self trace:@"Data recieved!"];
-            
-            NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-            [formatter setDateFormat:@"yyyy-MM-dd_HH-mm-ss"];
-            NSString *filePath = [NSString stringWithFormat:@"%@.wav", [formatter stringFromDate:[self getDateFromInt:_time]]];
-            filePath = [DocumentsPath() stringByAppendingPathComponent:filePath];
-            
-            [_data writeToFile:filePath atomically:YES];
-            
-            [self trace:[NSString stringWithFormat:@"File received = %@.wav", [formatter stringFromDate:[self getDateFromInt:_time]]]];
-            
-            // reset
-            _dataLength = 0;
-            _isReceivingAudioFile = false;
-            
-            // notify subscribers about new file appearence
-            [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
-                                                                object:nil
-                                                              userInfo:@{ kTapNtfnType: @kTapNtfnTypeFile, kTapNtfnFilePath: filePath }];
-        }
+    if (_receiveMode == RECEIVE_AUDIO_FILE) {
+        [self handleRecieveAudioFile: characteristic.value
+                      withPeripheral: peripheral
+                    withChararistics: characteristic];
+    } else if (_receiveMode == RECEIVE_LOG_FILE) {
+        [self handleRecieveLogFile: characteristic.value
+                    withPeripheral: peripheral
+                  withChararistics: characteristic];
     }
 }
 
@@ -484,8 +451,12 @@
 - (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error
 {
     _currentPeripheral = nil;
-    _dataLength = 0;
+    _progress = 0;
+    _audioLength = 0;
     _isReceivingAudioFile = false;
+    _logLength = 0;
+    _isReceivingLogFile = false;
+    _receiveMode = RECEIVE_NONE;
     
     _isConnected = NO;
     
@@ -583,9 +554,138 @@
                                                           userInfo:@{ kTapNtfnType: @kTapNtfnTypeStatus }];
         
         return ret;
+    } else if (!([string rangeOfString:@"5504"].location == NSNotFound)) {
+        Byte buf[1] = { 0 };
+        
+        [data getBytes:buf range:NSMakeRange(4, 1)];
+        
+        if (buf[0] == '0') {
+            _receiveMode = RECEIVE_AUDIO_FILE;
+        } else if (buf[0] == '1') {
+            _receiveMode = RECEIVE_LOG_FILE;
+        }
+        
+        ret = true;
     }
     
     return ret;
+}
+
+
+- (void)handleRecieveAudioFile: (NSData*)data
+                withPeripheral: (CBPeripheral*)peripheral
+              withChararistics: (CBCharacteristic*)characteristic {
+    if (_audioLength == 0) // First packet
+    {
+        unsigned int ml;
+        
+        [characteristic.value getBytes:&ml length:4];
+        [self trace:[NSString stringWithFormat:@"Read record metadata: metadata length = %d", ml]];
+        
+        [characteristic.value getBytes:&_audioLength range:NSMakeRange(4, 4)];
+        [self trace:[NSString stringWithFormat:@"Read record metadata: audio length = %d", _audioLength]];
+        
+        [characteristic.value getBytes:&_audioRecordedTime range:NSMakeRange(8, 4)];
+        
+        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+        [formatter setDateFormat:@"yyyy-MM-dd_HH:mm:ss"];
+        [self trace:[NSString stringWithFormat:@"Read record metadata: record time = %@", [formatter stringFromDate:[self getDateFromInt:_audioRecordedTime]]]];
+        
+        [self trace:@"Recieveing audio data..."];
+        
+        _audioBuffer = [[NSMutableData alloc] init];
+        _isReceivingAudioFile = true;
+        _progress = 0;
+    }
+    else if (_audioBuffer.length < _audioLength)
+    {
+        [_audioBuffer appendData:characteristic.value];
+        
+        float currentProgress = (float)_audioBuffer.length / (float)_audioLength;
+        if (fabsf(currentProgress - _progress) >= PROGRESS_LOG_DELTA || _audioBuffer.length == _audioLength) {
+            _progress = currentProgress;
+            [self trace:@"Received %d%%", (int)(_progress * 100.0f)];
+        }
+        
+        if (_audioBuffer.length == _audioLength)
+        {
+            [peripheral setNotifyValue:NO forCharacteristic:characteristic];
+            
+            [self trace:@"Data recieved!"];
+            
+            NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+            [formatter setDateFormat:@"yyyy-MM-dd_HH-mm-ss"];
+            NSString *filePath = [NSString stringWithFormat:@"%@.wav", [formatter stringFromDate:[self getDateFromInt:_audioRecordedTime]]];
+            filePath = [DocumentsPath() stringByAppendingPathComponent:filePath];
+            
+            [_audioBuffer writeToFile:filePath atomically:YES];
+            
+            [self trace:[NSString stringWithFormat:@"File received = %@.wav", [formatter stringFromDate:[self getDateFromInt:_audioRecordedTime]]]];
+            
+            // reset
+            _audioLength = 0;
+            _progress = 0;
+            _isReceivingAudioFile = false;
+            _receiveMode = RECEIVE_NONE;
+            
+            // notify subscribers about new file appearence
+            [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
+                                                                object:nil
+                                                              userInfo:@{ kTapNtfnType: @kTapNtfnTypeFile, kTapNtfnFilePath: filePath }];
+        }
+    }
+}
+
+
+- (void)handleRecieveLogFile: (NSData*)data
+              withPeripheral: (CBPeripheral*)peripheral
+            withChararistics: (CBCharacteristic*)characteristic {
+    if (_logLength == 0) // First packet
+    {
+        unsigned int ml;
+        
+        [data getBytes:&ml length:4];
+        [self trace:[NSString stringWithFormat:@"Log metadata: metadata length = %d", ml]];
+        
+        [data getBytes:&_logLength range:NSMakeRange(4, 4)];
+        [self trace:[NSString stringWithFormat:@"Log metadata: log length = %d", _logLength]];
+        
+        [data getBytes:&_logCreatedTime range:NSMakeRange(8, 4)];
+        
+        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+        [formatter setDateFormat:@"yyyy-MM-dd_HH:mm:ss"];
+        [self trace:[NSString stringWithFormat:@"Log metadata: created time = %@", [formatter stringFromDate:[self getDateFromInt:_logCreatedTime]]]];
+        
+        [self trace:@"Recieveing log data ..."];
+        
+        _logBuffer = [[NSMutableData alloc] init];
+        _isReceivingLogFile = true;
+    }
+    else if (_logBuffer.length < _logLength)
+    {
+        [_logBuffer appendData:data];
+        
+        if (_logBuffer.length == _logLength)
+        {
+            [peripheral setNotifyValue:NO forCharacteristic:characteristic];
+            
+            [self trace:@"Log received!"];
+            
+            NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+            [formatter setDateFormat:@"yyyy-MM-dd_HH-mm-ss"];
+            NSString *filePath = [NSString stringWithFormat:@"Documents/%@_log.txt", [formatter stringFromDate:[self getDateFromInt:_logCreatedTime]]];
+            
+            NSString *docPath = [DocumentsPath() stringByAppendingPathComponent:filePath];
+            [_logBuffer writeToFile:docPath atomically:YES];
+            
+            [self trace:[NSString stringWithFormat:@"File received = %@_log.txt", [formatter stringFromDate:[self getDateFromInt:_logCreatedTime]]]];
+            
+            // Reset
+            _logLength = 0;
+            _isReceivingLogFile = false;
+            _receiveMode = RECEIVE_NONE;
+        }
+    }
 }
 
 
@@ -631,6 +731,11 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 // Update parameter MIC
 - (void)sendWriteMIC:(NSString *)value {
     [self sendParameter:getParameterDataFromString(@"5502MIC", value)];
+}
+
+// Update parameter BTLOC
+- (void)sendWriteBTLOC:(NSString *)value {
+    [self sendParameter:getParameterDataFromString(@"5502BTLOC", value)];
 }
 
 - (void)sendWritePASSWORD:(NSString *)value {

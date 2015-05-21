@@ -88,6 +88,7 @@
     [_tap sendWritePAUSELEN:[self formatString:[self.tfPAUSE_LEN text] numberDigit:2]];
     [_tap sendWriteACCELERSENS:[self formatString:[self.tfACCELER_SENS text] numberDigit:3]];
     [_tap sendWriteMIC:[self formatString:[self.tfMIC text] numberDigit:3]];
+    [_tap sendWriteBTLOC:[self formatString:[self.tfBTLOC text] numberDigit:1]];
     [_tap sendWritePASSWORD:self.tfPASSWORD.text];
     
     // save password in user defaults

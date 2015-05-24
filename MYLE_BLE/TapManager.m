@@ -733,6 +733,11 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
     [self sendParameter:getParameterDataFromString(@"5502MIC", value)];
 }
 
+// Update parameter BTLOC
+- (void)sendWriteBTLOC:(NSString *)value {
+    [self sendParameter:getParameterDataFromString(@"5502BTLOC", value)];
+}
+
 - (void)sendWritePASSWORD:(NSString *)value {
     _currentPass = value;
     

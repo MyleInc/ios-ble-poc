@@ -17,3 +17,6 @@ NSString * DocumentsPath();
 
 #define SETTINGS_PERIPHERAL_UUID @"PERIPHERAL_UUID"
 #define SETTINGS_PERIPHERAL_PASS @"PERIPHERAL_PASS"
+
+#define RecordFileFormat @"yyyy-MM-dd-HH-mm-ss"
+#define TimeFormat @"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"

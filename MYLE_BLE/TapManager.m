@@ -588,10 +588,10 @@
         [characteristic.value getBytes:&_audioRecordedTime range:NSMakeRange(8, 4)];
         
         NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-        [formatter setDateFormat:@"yyyy-MM-dd_HH:mm:ss"];
+        [formatter setDateFormat:TimeFormat];
         [self trace:[NSString stringWithFormat:@"Read record metadata: record time = %@", [formatter stringFromDate:[self getDateFromInt:_audioRecordedTime]]]];
         
-        [self trace:@"Recieveing audio data..."];
+        [self trace:@"Receiving audio data..."];
         
         _audioBuffer = [[NSMutableData alloc] init];
         _isReceivingAudioFile = true;
@@ -611,16 +611,14 @@
         {
             [peripheral setNotifyValue:NO forCharacteristic:characteristic];
             
-            [self trace:@"Data recieved!"];
-            
             NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-            [formatter setDateFormat:@"yyyy-MM-dd_HH-mm-ss"];
-            NSString *filePath = [NSString stringWithFormat:@"%@.wav", [formatter stringFromDate:[self getDateFromInt:_audioRecordedTime]]];
-            filePath = [DocumentsPath() stringByAppendingPathComponent:filePath];
+            [formatter setDateFormat:RecordFileFormat];
+            NSString *fileName = [NSString stringWithFormat:@"%@.wav", [formatter stringFromDate:[self getDateFromInt:_audioRecordedTime]]];
+            NSString *filePath = [DocumentsPath() stringByAppendingPathComponent:fileName];
             
             [_audioBuffer writeToFile:filePath atomically:YES];
             
-            [self trace:[NSString stringWithFormat:@"File received = %@.wav", [formatter stringFromDate:[self getDateFromInt:_audioRecordedTime]]]];
+            [self trace:[NSString stringWithFormat:@"Audio saved to %@", fileName]];
             
             // reset
             _audioLength = 0;
@@ -653,10 +651,10 @@
         [data getBytes:&_logCreatedTime range:NSMakeRange(8, 4)];
         
         NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-        [formatter setDateFormat:@"yyyy-MM-dd_HH:mm:ss"];
+        [formatter setDateFormat:TimeFormat];
         [self trace:[NSString stringWithFormat:@"Log metadata: created time = %@", [formatter stringFromDate:[self getDateFromInt:_logCreatedTime]]]];
         
-        [self trace:@"Recieveing log data ..."];
+        [self trace:@"Receiving log data ..."];
         
         _logBuffer = [[NSMutableData alloc] init];
         _isReceivingLogFile = true;
@@ -669,16 +667,14 @@
         {
             [peripheral setNotifyValue:NO forCharacteristic:characteristic];
             
-            [self trace:@"Log received!"];
-            
             NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-            [formatter setDateFormat:@"yyyy-MM-dd_HH-mm-ss"];
-            NSString *filePath = [NSString stringWithFormat:@"Documents/%@_log.txt", [formatter stringFromDate:[self getDateFromInt:_logCreatedTime]]];
+            [formatter setDateFormat:RecordFileFormat];
+            NSString *fileName = [NSString stringWithFormat:@"%@.log", [formatter stringFromDate:[self getDateFromInt:_logCreatedTime]]];
             
-            NSString *docPath = [DocumentsPath() stringByAppendingPathComponent:filePath];
-            [_logBuffer writeToFile:docPath atomically:YES];
+            NSString *filePath = [DocumentsPath() stringByAppendingPathComponent:fileName];
+            [_logBuffer writeToFile:filePath atomically:YES];
             
-            [self trace:[NSString stringWithFormat:@"File received = %@_log.txt", [formatter stringFromDate:[self getDateFromInt:_logCreatedTime]]]];
+            [self trace:[NSString stringWithFormat:@"Log saved to %@", fileName]];
             
             // Reset
             _logLength = 0;

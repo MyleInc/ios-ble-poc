@@ -82,6 +82,7 @@ enum _RECEIVE_MODE {
 
 - (void)sendReadRECLN;
 - (void)sendReadBTLOC;
+- (void)sendReadUUID;
 - (void)sendReadPAUSELEVEL;
 - (void)sendReadPAUSELEN;
 - (void)sendReadACCELERSENS;

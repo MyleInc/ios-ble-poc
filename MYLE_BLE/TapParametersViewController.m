@@ -55,6 +55,7 @@
     [_tap sendReadACCELERSENS];
     [_tap sendReadMIC];
     [_tap sendReadBTLOC];
+    [_tap sendReadUUID];
     [_tap sendReadVERSION];
     
     // get current password
@@ -78,6 +79,9 @@
     } else if ([par isEqual: @"VERSION"]) {
         NSLog(@"OK = \"%@\"", strValue);
         self.tfVERSION.text = strValue;
+    } else if ([par isEqual: @"UUID"]) {
+        NSLog(@"UUID = \"%@\"", strValue);
+        self.tvUUID.text = strValue;
     }
 }
 

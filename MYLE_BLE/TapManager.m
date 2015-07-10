@@ -566,6 +566,14 @@
         }
         
         ret = true;
+    } else if (!([string rangeOfString:@"5503UUID"].location == NSNotFound)) {
+        Byte UUID[20] = { 0 };
+        
+        [data getBytes:UUID range:NSMakeRange(@"5503UUID".length, data.length - @"5503UUID".length)];
+        ret = true;
+        NSString *UUIDStr = [NSString stringWithUTF8String:(const char *)UUID];
+        [self trace:@"Bluetooth mac address: %@", UUIDStr];
+        [self notifyReadParameterListeners:@"UUID" intValue:0 strValue:UUIDStr];
     }
     
     return ret;
@@ -755,6 +763,10 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 
 - (void)sendReadBTLOC {
     [self sendParameter:getParameterDataFromString(@"5503BTLOC", @"")];
+}
+
+- (void)sendReadUUID {
+    [self sendParameter:getParameterDataFromString(@"5503UUID", @"")];
 }
 
 - (void)sendReadPAUSELEVEL {

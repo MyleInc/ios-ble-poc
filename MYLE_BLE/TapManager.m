@@ -566,6 +566,13 @@
         }
         
         ret = true;
+    } else if (!([string rangeOfString:@"5503BAT"].location == NSNotFound)) {
+        UIAlertView *alert =[[UIAlertView alloc] initWithTitle: @"Low battery"
+                                                       message: @"" delegate: nil
+                                             cancelButtonTitle: @"OK" otherButtonTitles:nil];
+        [alert show];
+        
+        ret = true;
     }
     
     return ret;

@@ -574,6 +574,14 @@
         NSString *UUIDStr = [NSString stringWithUTF8String:(const char *)UUID];
         [self trace:@"Bluetooth mac address: %@", UUIDStr];
         [self notifyReadParameterListeners:@"UUID" intValue:0 strValue:UUIDStr];
+
+    } else if (!([string rangeOfString:@"5503BAT"].location == NSNotFound)) {
+        UIAlertView *alert =[[UIAlertView alloc] initWithTitle: @"Low battery"
+                                                       message: @"" delegate: nil
+                                             cancelButtonTitle: @"OK" otherButtonTitles:nil];
+        [alert show];
+        
+        ret = true;
     }
     
     return ret;

@@ -8,7 +8,7 @@
 
 #import "TapManager.h"
 #import "TapServices.h"
-
+#define CREDITBLE ((int) 423)
 
 
 @interface TapManager()
@@ -136,7 +136,10 @@
             if (service.characteristics != nil) {
                 for (CBCharacteristic *characteristic in service.characteristics) {
                     if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_READ]] ||
-                        [characteristic.UUID isEqual:[CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_WRITE]]) {
+//Amotus added the battery level in the characteristic list
+                        //                        [characteristic.UUID isEqual:[CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_WRITE]]) {
+                        [characteristic.UUID isEqual:[CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_WRITE]] ||
+                        [characteristic.UUID isEqual:[CBUUID UUIDWithString:BATTERY_LEVEL_UUID]]) {
                         if (characteristic.isNotifying) {
                             [_currentPeripheral setNotifyValue:NO forCharacteristic:characteristic];
                             return;
@@ -264,11 +267,17 @@
     }
     
     // List 2 characteristics
-    NSArray * characteristics = [NSArray arrayWithObjects: [CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_READ], [CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_WRITE], [CBUUID UUIDWithString:CHARACTERISTIC_UUID_CONFIG], nil];
+//    NSArray * characteristics = [NSArray arrayWithObjects: [CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_READ], [CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_WRITE], [CBUUID UUIDWithString:CHARACTERISTIC_UUID_CONFIG], nil];
+//Amotus added the battery to characteristic list
+    NSArray * characteristics = [NSArray arrayWithObjects: [CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_READ], [CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_WRITE], [CBUUID UUIDWithString:CHARACTERISTIC_UUID_CONFIG], [CBUUID UUIDWithString:BATTERY_LEVEL_UUID], nil];
     
+    
+    //Amotus: si on passe nil au lieu de characteristics on peut voir tous les characteristics. interessant pour s'assurer que le firmware a la char.
     for (CBService *service in peripheral.services) {
-        [peripheral discoverCharacteristics:characteristics forService:service];
+//        [peripheral discoverCharacteristics:characteristics forService:service];
+        [peripheral discoverCharacteristics:nil forService:service];
     }
+    int a = 1;
 }
 
 
@@ -390,25 +399,22 @@
     {
         return;
     }
-    
+ 
+    //Amotus: Quand on aura une lecture de la caracteristique BATTERY_LEVEL il va mettre la valeur dans le self.
     /*********** RECEIVE PARAMETER VALUE ***************/
     if (!_isReceivingAudioFile && !_isReceivingLogFile) {
         if([self readParameter:characteristic.value]) { return; }
     }
     
     /*********** RECEIVE AUDIO FILE OR LOG FILE ********************/
-    
-    // Send back to peripheral number of bytes received.
-    NSInteger numBytes = characteristic.value.length;
-    NSData *data = [self IntToNSData:numBytes];
-    
-    [_currentPeripheral writeValue:data forCharacteristic:[[[_currentPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
-    
+
     if (_receiveMode == RECEIVE_AUDIO_FILE) {
         [self handleRecieveAudioFile: characteristic.value
                       withPeripheral: peripheral
                     withChararistics: characteristic];
+        
     } else if (_receiveMode == RECEIVE_LOG_FILE) {
+        // Send back to peripheral number of bytes received.
         [self handleRecieveLogFile: characteristic.value
                     withPeripheral: peripheral
                   withChararistics: characteristic];
@@ -430,7 +436,7 @@
     if (error) {
         return [self trace:@"Error updating notification state for characteristic %@: %@", characteristic.UUID.UUIDString, error];
     }
-    
+//Amotus: Probablement que l'on doit ajouter la caracteristique de BATTERY_LEVEL ici. Mais pas certain.
     // Listen only 2 characterristics
     if (![characteristic.UUID isEqual:[CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_READ]] &&
         ![characteristic.UUID isEqual:[CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_WRITE]])
@@ -575,14 +581,14 @@
         [self trace:@"Bluetooth mac address: %@", UUIDStr];
         [self notifyReadParameterListeners:@"UUID" intValue:0 strValue:UUIDStr];
 
-    } else if (!([string rangeOfString:@"5503BAT"].location == NSNotFound)) {
-        UIAlertView *alert =[[UIAlertView alloc] initWithTitle: @"Low battery"
-                                                       message: @"" delegate: nil
-                                             cancelButtonTitle: @"OK" otherButtonTitles:nil];
-        [alert show];
-        
-        ret = true;
-    }
+    }//Amotus: This old battery mechanism to be remove and should use the BATTERY_LEVEL characteristics //else if (!([string rangeOfString:@"5503BAT"].location == NSNotFound)) {
+//        UIAlertView *alert =[[UIAlertView alloc] initWithTitle: @"Low battery"
+//                                                       message: @"" delegate: nil
+//                                             cancelButtonTitle: @"OK" otherButtonTitles:nil];
+//        [alert show];
+//
+//        ret = true;
+//    }
     
     return ret;
 }
@@ -591,6 +597,9 @@
 - (void)handleRecieveAudioFile: (NSData*)data
                 withPeripheral: (CBPeripheral*)peripheral
               withChararistics: (CBCharacteristic*)characteristic {
+    
+    static CFTimeInterval startTime = 0;
+    
     if (_audioLength == 0) // First packet
     {
         unsigned int ml;
@@ -612,9 +621,21 @@
         _audioBuffer = [[NSMutableData alloc] init];
         _isReceivingAudioFile = true;
         _progress = 0;
+        
+        NSInteger numBytes = CREDITBLE;
+        Byte byteData[2] = { numBytes & 0xff, numBytes >> 8 };
+        NSData *data2 = [NSData dataWithBytes:byteData length:2];
+        
+        [_currentPeripheral writeValue:data2 forCharacteristic:[[[_currentPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
+        
+        startTime = CACurrentMediaTime();
+        
     }
     else if (_audioBuffer.length < _audioLength)
     {
+        static NSInteger numBytesTransfered = 0;
+        static unsigned int fileLength = 0;
+        
         [_audioBuffer appendData:characteristic.value];
         
         float currentProgress = (float)_audioBuffer.length / (float)_audioLength;
@@ -623,8 +644,11 @@
             [self trace:@"Received %d%%", (int)(_progress * 100.0f)];
         }
         
-        if (_audioBuffer.length == _audioLength)
+        if (_audioBuffer.length >= _audioLength)
         {
+            
+            CFTimeInterval elapsedTime = CACurrentMediaTime() - startTime;
+            
             [peripheral setNotifyValue:NO forCharacteristic:characteristic];
             
             NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
@@ -635,17 +659,39 @@
             [_audioBuffer writeToFile:filePath atomically:YES];
             
             [self trace:[NSString stringWithFormat:@"Audio saved to %@", fileName]];
+            [self trace:[NSString stringWithFormat:@"Transfer Speed %d B/s", (int)(_audioLength/elapsedTime)]];
+            
             
             // reset
             _audioLength = 0;
             _progress = 0;
             _isReceivingAudioFile = false;
             _receiveMode = RECEIVE_NONE;
+            fileLength = 0;
             
             // notify subscribers about new file appearence
             [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                                 object:nil
                                                               userInfo:@{ kTapNtfnType: @kTapNtfnTypeFile, kTapNtfnFilePath: filePath }];
+        }
+        else{
+            
+            numBytesTransfered += characteristic.value.length;
+            fileLength += numBytesTransfered;
+            
+            NSInteger numBytes = CREDITBLE;
+            if(_audioLength - _audioBuffer.length < CREDITBLE)
+            {
+                numBytes = _audioLength - _audioBuffer.length;
+            }
+            
+            if(numBytesTransfered >= numBytes)
+            {
+                numBytesTransfered = 0;
+                Byte byteData[2] = { numBytes & 0xff, numBytes >> 8 };
+                NSData *data2 = [NSData dataWithBytes:byteData length:2];
+                [_currentPeripheral writeValue:data2 forCharacteristic:[[[_currentPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
+            }
         }
     }
 }
@@ -654,6 +700,11 @@
 - (void)handleRecieveLogFile: (NSData*)data
               withPeripheral: (CBPeripheral*)peripheral
             withChararistics: (CBCharacteristic*)characteristic {
+    
+    static NSInteger numBytesTransfered = 0;
+    static unsigned int fileLength = 0;
+    
+    // perform some action
     if (_logLength == 0) // First packet
     {
         unsigned int ml;
@@ -674,12 +725,16 @@
         
         _logBuffer = [[NSMutableData alloc] init];
         _isReceivingLogFile = true;
+        NSInteger numBytes = 235;
+        NSData *data = [self IntToNSData:numBytes];
+        [_currentPeripheral writeValue:data forCharacteristic:[[[_currentPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
+        
     }
     else if (_logBuffer.length < _logLength)
     {
         [_logBuffer appendData:data];
         
-        if (_logBuffer.length == _logLength)
+        if (_logBuffer.length >= _logLength)
         {
             [peripheral setNotifyValue:NO forCharacteristic:characteristic];
             
@@ -696,6 +751,24 @@
             _logLength = 0;
             _isReceivingLogFile = false;
             _receiveMode = RECEIVE_NONE;
+        }
+        else{
+            
+            numBytesTransfered += characteristic.value.length;
+            fileLength += numBytesTransfered;
+            
+            NSInteger numBytes = 235;
+            if(_logLength - _logBuffer.length < 235)
+            {
+                numBytes = _logLength - _logBuffer.length;
+            }
+            
+            if(numBytesTransfered >= numBytes)
+            {
+                numBytesTransfered = 0;
+                NSData *data = [self IntToNSData:numBytes];
+                [_currentPeripheral writeValue:data forCharacteristic:[[[_currentPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
+            }
         }
     }
 }
@@ -795,6 +868,10 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 
 - (void)sendReadVERSION {
     [self sendParameter:getParameterDataFromString(@"5503VERSION", @"")];
+}
+
+- (void)sendReadBATTERY_LEVEL {
+    [self sendParameter:getParameterDataFromString(@"BATTERY_LEVEL", @"")];
 }
 
 /************ END READ PARAMETER ****************/

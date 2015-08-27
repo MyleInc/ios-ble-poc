@@ -88,5 +88,6 @@ enum _RECEIVE_MODE {
 - (void)sendReadACCELERSENS;
 - (void)sendReadMIC;
 - (void)sendReadVERSION;
+- (void)sendReadBATTERY_LEVEL;
 
 @end

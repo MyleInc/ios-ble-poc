@@ -29,6 +29,8 @@
 
 @property (weak, nonatomic) IBOutlet UITextField *tfVERSION;
 
+@property (weak, nonatomic) IBOutlet UITextField *tfBATTERY_LEVEL;
+
 @property (weak, nonatomic) IBOutlet UIScrollView *scrollView;
 
 - (IBAction)writeAll:(id)sender;

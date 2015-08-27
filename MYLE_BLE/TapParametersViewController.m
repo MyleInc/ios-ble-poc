@@ -57,6 +57,7 @@
     [_tap sendReadBTLOC];
     [_tap sendReadUUID];
     [_tap sendReadVERSION];
+    [_tap sendReadBATTERY_LEVEL];
     
     // get current password
     self.tfPASSWORD.text = [_tap getCurrentTapPassword];
@@ -82,6 +83,9 @@
     } else if ([par isEqual: @"UUID"]) {
         NSLog(@"UUID = \"%@\"", strValue);
         self.tvUUID.text = strValue;
+    } else if ([par isEqual: @"BATTERY_LEVEL"]) {
+        NSLog(@"BATTERY_LEVEL = \"%@\"", strValue);
+        self.tfBATTERY_LEVEL.text = strValue;
     }
 }
 

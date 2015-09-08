@@ -14,3 +14,5 @@
 
 // Battery level characteristics (0x2A19 16 bits uuid)
 #define BATTERY_LEVEL_UUID @"2A19"
+#define BATTERY_SERVICE_UUID @"180F"
+NSString *batteryServiceUUIDString = @"180F";

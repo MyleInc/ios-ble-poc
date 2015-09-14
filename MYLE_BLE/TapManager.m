@@ -293,13 +293,13 @@
         // battery service
         if ([[service UUID] isEqual:[CBUUID UUIDWithString:batteryServiceUUIDString]]) {
             batteryService = service;
-//            [peripheral discoverCharacteristics:characteristicsBAS forService:service];
-            [peripheral discoverCharacteristics:characteristicsBAS forService:batteryService];
+            [peripheral discoverCharacteristics:characteristicsBAS forService:service];
+//Do nothing with battery service            [peripheral discoverCharacteristics:characteristicsBAS forService:batteryService];
         }
         else {
             MyleMainService = service;
-//            [peripheral discoverCharacteristics:characteristics forService:service];
-            [peripheral discoverCharacteristics:characteristics forService:MyleMainService];
+            [peripheral discoverCharacteristics:characteristics forService:service];
+//            [peripheral discoverCharacteristics:characteristics forService:MyleMainService];
         }
 //        [peripheral discoverCharacteristics:nil forService:service];
     }
@@ -339,9 +339,9 @@
             [self trace:[NSString stringWithFormat:@"Character = %@", characteristic]];
             if ([[characteristic UUID] isEqual:[CBUUID UUIDWithString:BATTERY_LEVEL_UUID]]){
                 batteryLevel = characteristic;
-                //                [peripheral setNotifyValue:YES forCharacteristic:characteristic];
-//                [peripheral readValueForCharacteristic:characteristic];
-                [peripheral readValueForCharacteristic:batteryLevel];
+                //Use to enable or disable the notification from the battery service.
+                [peripheral setNotifyValue:YES forCharacteristic:characteristic];
+                [peripheral readValueForCharacteristic:characteristic];
             }
         }
     }
@@ -349,11 +349,11 @@
         for (CBCharacteristic *characteristic in service.characteristics) {
             [self trace:[NSString stringWithFormat:@"Character = %@", characteristic]];
             //[self log:[NSString stringWithFormat:@"Character = %@", characteristic]];
-//            [peripheral setNotifyValue:YES forCharacteristic:characteristic];
+            [peripheral setNotifyValue:YES forCharacteristic:characteristic];
 //essai de tout lire les char voir ce qui se passe
 //            [peripheral readValueForCharacteristic:characteristic];
         }
-    
+
         // Send password to board
         NSData *keyData = [self makeKey:_currentPass];
     
@@ -436,15 +436,21 @@
 - (void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
 {
     if (error) {
- //       return [self trace:@"Error updating value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
-        [self trace:@"Error updating value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
+        return [self trace:@"Error updating value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
+        //[self trace:@"Error updating value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
     }
-    [self trace:@"updating value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
+//    [self trace:@"updating value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
 
     //Readback of the battery level
-    if ([characteristic.UUID.UUIDString isEqualToString:BATTERY_LEVEL_UUID]){
-        [self readBatteryLevel:characteristic.value];
-        return;
+    if ([[characteristic UUID] isEqual:[CBUUID UUIDWithString:BATTERY_LEVEL_UUID]]) {
+        if ([[characteristic.service UUID ] isEqual:[CBUUID UUIDWithString:BATTERY_SERVICE_UUID]]) {
+            [self readBatteryLevel:characteristic.value];
+            [self trace:@"Update battery_level=%@", batteryValueStr];
+            return;
+        }
+        else{
+            [self trace:@"battery level uuid not in battery service"];
+        }
     }
     
     // Not correct characteristics
@@ -489,9 +495,8 @@
         return [self trace:@"Error updating notification state for characteristic %@: %@", characteristic.UUID.UUIDString, error];
     }
 
-    //Received a notification of the battery level
-    if ([characteristic.UUID.UUIDString isEqualToString:BATTERY_LEVEL_UUID]) {
-        [self readBatteryLevel:characteristic.value];
+    if ([[characteristic UUID] isEqual:[CBUUID UUIDWithString:BATTERY_LEVEL_UUID]]) {
+        [self trace:@"Changed notification state on battery level"];
         return;
     }
     
@@ -556,7 +561,8 @@
 - (Boolean) readBatteryLevel:(NSData *)data {
     Byte byteData[3] = { 0 };
     [data getBytes:byteData range:NSMakeRange(0, 1)];
-    //Amotus Do UI update here
+    //Amotus Do UI update here. Need to send to value to parameters UI textbox. //We received to battery value on one 1 byte.
+    batteryValueStr = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
     return true;
 }
 
@@ -720,7 +726,7 @@
             
             CFTimeInterval elapsedTime = CACurrentMediaTime() - startTime;
             
-            [peripheral setNotifyValue:NO forCharacteristic:characteristic];
+//            [peripheral setNotifyValue:NO forCharacteristic:characteristic];
             
             NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
             [formatter setDateFormat:RecordFileFormat];
@@ -807,7 +813,7 @@
         
         if (_logBuffer.length >= _logLength)
         {
-            [peripheral setNotifyValue:NO forCharacteristic:characteristic];
+//            [peripheral setNotifyValue:NO forCharacteristic:characteristic];
             
             NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
             [formatter setDateFormat:RecordFileFormat];

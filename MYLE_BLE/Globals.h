@@ -20,3 +20,6 @@ NSString * DocumentsPath();
 
 #define RecordFileFormat @"yyyy-MM-dd-HH-mm-ss"
 #define TimeFormat @"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+
+//string value to show the battery value has been read when the characteristic was discovered.
+NSString* batteryValueStr;

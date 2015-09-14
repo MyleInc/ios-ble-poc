@@ -86,11 +86,7 @@
         NSLog(@"UUID = \"%@\"", strValue);
         self.tvUUID.text = strValue;
     }
-    /* else if ([par isEqual: @"BATTERY_LEVEL"]) {
-        NSLog(@"BATTERY_LEVEL = \"%@\"", strValue);
-        self.tfBATTERY_LEVEL.text = strValue;
-    }
-     */
+
     self.tfBATTERY_LEVEL.text = batteryValueStr;
 }
 

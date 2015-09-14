@@ -126,8 +126,6 @@
 - (void)scanPeripherals {
     [self clearTapList];
     
- //   [_centralManager scanForPeripheralsWithServices:@[[CBUUID UUIDWithString:SERVICE_UUID]] options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @NO }];
- //   [_centralManager scanForPeripheralsWithServices:nil options:nil];
     NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
     [_centralManager scanForPeripheralsWithServices:servicesTap options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @NO }];
     [self trace:@"Scan started"];
@@ -251,9 +249,6 @@
     
     [self trace:@"Connected to tap %@, stopped scanning", peripheral.identifier.UUIDString];
     
-//    _isConnected = YES;
-    
-//    if (!_isConnected) {
         peripheral.delegate = self;
 
         NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
@@ -266,10 +261,6 @@
         [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                                     object:nil
                                                                     userInfo:@{ kTapNtfnType: @kTapNtfnTypeStatus }];
-//    }
-//    else {
-//        [self trace:@"Error connecting to a device and already connected once"];
-//    }
 }
 
 
@@ -294,14 +285,11 @@
         if ([[service UUID] isEqual:[CBUUID UUIDWithString:batteryServiceUUIDString]]) {
             batteryService = service;
             [peripheral discoverCharacteristics:characteristicsBAS forService:service];
-//Do nothing with battery service            [peripheral discoverCharacteristics:characteristicsBAS forService:batteryService];
         }
         else {
             MyleMainService = service;
             [peripheral discoverCharacteristics:characteristics forService:service];
-//            [peripheral discoverCharacteristics:characteristics forService:MyleMainService];
         }
-//        [peripheral discoverCharacteristics:nil forService:service];
     }
 //    int a = 1;
 }
@@ -332,8 +320,6 @@
     }
     [self trace:@"discovering characteristics for service %@: %@", service.UUID.UUIDString, error];
 
-//    if (service.UUID == batteryService.UUID){
-//    if (service.UUID == [CBUUID UUIDWithString:batteryServiceUUIDString]) {
     if ([[service UUID] isEqual:[CBUUID UUIDWithString:batteryServiceUUIDString]]) {
         for (CBCharacteristic *characteristic in service.characteristics) {
             [self trace:[NSString stringWithFormat:@"Character = %@", characteristic]];
@@ -350,8 +336,6 @@
             [self trace:[NSString stringWithFormat:@"Character = %@", characteristic]];
             //[self log:[NSString stringWithFormat:@"Character = %@", characteristic]];
             [peripheral setNotifyValue:YES forCharacteristic:characteristic];
-//essai de tout lire les char voir ce qui se passe
-//            [peripheral readValueForCharacteristic:characteristic];
         }
 
         // Send password to board
@@ -437,7 +421,6 @@
 {
     if (error) {
         return [self trace:@"Error updating value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
-        //[self trace:@"Error updating value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
     }
 //    [self trace:@"updating value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
 

@@ -965,6 +965,12 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 }
 
 
+- (void) removeParameterReadListener:(ReadParameterListener)listener
+{
+    [_readParameterListeners removeObject:listener];
+}
+
+
 - (void) notifyReadParameterListeners:(NSString*)parameterName intValue:(NSUInteger)intValue strValue:(NSString*) strValue
 {
     for (ReadParameterListener listener in _readParameterListeners) {

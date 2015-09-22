@@ -323,11 +323,10 @@
     if ([[service UUID] isEqual:[CBUUID UUIDWithString:batteryServiceUUIDString]]) {
         for (CBCharacteristic *characteristic in service.characteristics) {
             [self trace:[NSString stringWithFormat:@"Character = %@", characteristic]];
-            if ([[characteristic UUID] isEqual:[CBUUID UUIDWithString:BATTERY_LEVEL_UUID]]){
+            if ([[characteristic UUID] isEqual:[CBUUID UUIDWithString:BATTERY_LEVEL_UUID]]) {
                 batteryLevel = characteristic;
                 //Use to enable or disable the notification from the battery service.
                 [peripheral setNotifyValue:YES forCharacteristic:characteristic];
-                [peripheral readValueForCharacteristic:characteristic];
             }
         }
     }
@@ -428,7 +427,6 @@
     if ([[characteristic UUID] isEqual:[CBUUID UUIDWithString:BATTERY_LEVEL_UUID]]) {
         if ([[characteristic.service UUID ] isEqual:[CBUUID UUIDWithString:BATTERY_SERVICE_UUID]]) {
             [self readBatteryLevel:characteristic.value];
-            [self trace:@"Update battery_level=%@", batteryValueStr];
             return;
         }
         else{
@@ -542,10 +540,11 @@
 }
 
 - (Boolean) readBatteryLevel:(NSData *)data {
-    Byte byteData[3] = { 0 };
+    Byte byteData[1] = { 0 };
     [data getBytes:byteData range:NSMakeRange(0, 1)];
-    //Amotus Do UI update here. Need to send to value to parameters UI textbox. //We received to battery value on one 1 byte.
-    batteryValueStr = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
+
+    [self trace:@"Battery level received: %d", byteData[0]];
+    [self notifyReadParameterListeners:@"BATTERY_LEVEL" intValue:byteData[0] strValue:nil];
     return true;
 }
 
@@ -641,15 +640,7 @@
         [self trace:@"Bluetooth mac address: %@", UUIDStr];
         [self notifyReadParameterListeners:@"UUID" intValue:0 strValue:UUIDStr];
 
-    }//Amotus: This old battery mechanism to be remove and should use the BATTERY_LEVEL characteristics //else if (!([string rangeOfString:@"5503BAT"].location == NSNotFound)) {
-//        UIAlertView *alert =[[UIAlertView alloc] initWithTitle: @"Low battery"
-//                                                       message: @"" delegate: nil
-//                                             cancelButtonTitle: @"OK" otherButtonTitles:nil];
-//        [alert show];
-//
-//        ret = true;
-//    }
-    
+    }
     return ret;
 }
 
@@ -931,7 +922,7 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 }
 
 - (void)sendReadBATTERY_LEVEL {
-    [self sendParameter:getParameterDataFromString(@"BATTERY_LEVEL", @"")];
+    [_currentPeripheral readValueForCharacteristic:batteryLevel];
 }
 
 /************ END READ PARAMETER ****************/

@@ -13,6 +13,7 @@
 
 @implementation TapParametersViewController {
     TapManager *_tap;
+    ReadParameterListener _listenerFn;
 }
 
 
@@ -25,9 +26,10 @@
     
     // subscribe to tap parameter read notifications
     TapParametersViewController *this = self;
-    [_tap addParameterReadListener:^(NSString *par, NSUInteger intValue, NSString *strValue){
+    _listenerFn = ^(NSString *par, NSUInteger intValue, NSString *strValue){
         [this onParameterRead:par intValue:intValue strValue:strValue];
-    }];
+    };
+    [_tap addParameterReadListener:_listenerFn];
     
     self.scrollView.contentSize = CGSizeMake(self.scrollView.superview.frame.size.width, 600);
     
@@ -57,6 +59,7 @@
     [_tap sendReadBTLOC];
     [_tap sendReadUUID];
     [_tap sendReadVERSION];
+    [_tap sendReadBATTERY_LEVEL];
     
     // get current password
     self.tfPASSWORD.text = [_tap getCurrentTapPassword];
@@ -77,11 +80,11 @@
     } else if ([par isEqual: @"BTLOC"]) {
         self.tfBTLOC.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
     } else if ([par isEqual: @"VERSION"]) {
-        NSLog(@"OK = \"%@\"", strValue);
         self.tfVERSION.text = strValue;
     } else if ([par isEqual: @"UUID"]) {
-        NSLog(@"UUID = \"%@\"", strValue);
         self.tvUUID.text = strValue;
+    } else if ([par isEqual: @"BATTERY_LEVEL"]) {
+        self.tfBATTERY_LEVEL.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
     }
 }
 
@@ -135,6 +138,12 @@
 - (IBAction)back:(id)sender
 {
     [self.navigationController popViewControllerAnimated:YES];
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    if (![[self.navigationController viewControllers] containsObject: self]) {      
+        [_tap removeParameterReadListener:_listenerFn];
+    }
 }
 
 @end

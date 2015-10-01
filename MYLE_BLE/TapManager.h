@@ -69,6 +69,9 @@ enum _RECEIVE_MODE {
 // Adds a listener for parameter read notification
 - (void)addParameterReadListener:(ReadParameterListener)listener;
 
+// Adds a listener for parameter read notification
+- (void)removeParameterReadListener:(ReadParameterListener)listener;
+
 // Adds a listener for trace messafes
 - (void)addTraceListener:(TraceListener)listener;
 
@@ -88,5 +91,6 @@ enum _RECEIVE_MODE {
 - (void)sendReadACCELERSENS;
 - (void)sendReadMIC;
 - (void)sendReadVERSION;
+- (void)sendReadBATTERY_LEVEL;
 
 @end

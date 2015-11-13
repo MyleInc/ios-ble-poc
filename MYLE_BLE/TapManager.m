@@ -32,6 +32,7 @@
     NSString *_currentUUID;
     NSString *_currentPass;
     
+    BOOL _isAuthenticating;
     BOOL _isConnected;
     
     NSMutableArray *_availableTaps;
@@ -158,7 +159,8 @@
 
 
 - (void)disconnect {
-    if (_currentPeripheral != nil && _currentPeripheral.state == CBPeripheralStateConnecting) {
+    if (_currentPeripheral != nil) {
+        [self forgetCurrent];
         [_centralManager cancelPeripheralConnection:_currentPeripheral];
         [self trace:@"Disconnecting from tap %@", _currentPeripheral.identifier.UUIDString];
     }
@@ -230,7 +232,6 @@
             // yes, this is the one! auto connect
             [self trace:@"Auto-connecting to previously used tap %@", peripheral.identifier.UUIDString];
             [self connect:peripheral pass:_currentPass];
-            _isConnected = YES;
         }
     }
 }
@@ -249,18 +250,10 @@
     
     [self trace:@"Connected to tap %@, stopped scanning", peripheral.identifier.UUIDString];
     
-        peripheral.delegate = self;
+    peripheral.delegate = self;
 
-        NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
-    
-        //    [peripheral discoverServices:@[[CBUUID UUIDWithString:SERVICE_UUID]]];
-        //[peripheral discoverServices:nil];
-        [peripheral discoverServices:servicesTap];
-    
-        // notify subscribers about connected peripheral
-        [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
-                                                                    object:nil
-                                                                    userInfo:@{ kTapNtfnType: @kTapNtfnTypeStatus }];
+    NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
+    [peripheral discoverServices:servicesTap];
 }
 
 
@@ -291,7 +284,6 @@
             [peripheral discoverCharacteristics:characteristics forService:service];
         }
     }
-//    int a = 1;
 }
 
 
@@ -338,6 +330,7 @@
         }
 
         // Send password to board
+        _isAuthenticating = YES;
         NSData *keyData = [self makeKey:_currentPass];
     
         [self trace:@"Sending password: %@", _currentPass];
@@ -500,6 +493,22 @@
 // Disconnect peripheral
 - (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error
 {
+    if (error && error.code == 7 && _isAuthenticating) {
+        // code 7 means "The specified device has disconnected from us."
+        // so tap forces disconnection
+        // in case of authentication it means that password was incorrect
+            [self trace:@"Password doesn't match"];
+            
+            _isAuthenticating = NO;
+            
+            [self disconnect];
+            
+            // notify subscribers about bad password
+            [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
+                                                                object:nil
+                                                              userInfo:@{ kTapNtfnType: @kTapNtfnTypeAuthFailed }];
+    }
+    
     _currentPeripheral = nil;
     _progress = 0;
     _audioLength = 0;
@@ -507,10 +516,6 @@
     _logLength = 0;
     _isReceivingLogFile = false;
     _receiveMode = RECEIVE_NONE;
-
-    if (!_isConnected){
-        [self trace:@"Error disconnecting but not connected to any device"];
-    }
     _isConnected = NO;
     
     [self trace:@"Disconnected from tap %@", peripheral.identifier.UUIDString];
@@ -521,7 +526,6 @@
         [self clearTapList];
         NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
         
-//        [_centralManager scanForPeripheralsWithServices:@[[CBUUID UUIDWithString:SERVICE_UUID]] options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @NO }];
         [_centralManager scanForPeripheralsWithServices:servicesTap options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @NO }];
 
         [self trace:@"Scanning started"];
@@ -608,7 +612,8 @@
     }
     else if (!([string rangeOfString:@"CONNECTED"].location == NSNotFound))
     {
-        _isVerified = true;
+        _isAuthenticating = false;
+        _isConnected = true;
         ret = true;
         
         [self syncTime];
@@ -616,7 +621,7 @@
         // notify subscribers about connected peripheral
         [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                             object:nil
-                                                          userInfo:@{ kTapNtfnType: @kTapNtfnTypeStatus }];
+                                                          userInfo:@{ kTapNtfnType: @kTapNtfnTypeConnected }];
         
         return ret;
     } else if (!([string rangeOfString:@"5504"].location == NSNotFound)) {
@@ -685,7 +690,6 @@
     else if (_audioBuffer.length < _audioLength)
     {
         static NSInteger numBytesTransfered = 0;
-        static unsigned int fileLength = 0;
         
         [_audioBuffer appendData:characteristic.value];
         
@@ -718,7 +722,6 @@
             _progress = 0;
             _isReceivingAudioFile = false;
             _receiveMode = RECEIVE_NONE;
-            fileLength = 0;
             
             // notify subscribers about new file appearence
             [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
@@ -728,7 +731,6 @@
         else{
             
             numBytesTransfered += characteristic.value.length;
-            fileLength += numBytesTransfered;
             
             NSInteger numBytes = CREDITBLE;
             if(_audioLength - _audioBuffer.length < CREDITBLE)

@@ -26,8 +26,10 @@
     
     // subscribe to tap parameter read notifications
     TapParametersViewController *this = self;
-    _listenerFn = ^(NSString *par, NSUInteger intValue, NSString *strValue){
-        [this onParameterRead:par intValue:intValue strValue:strValue];
+    _listenerFn = ^(NSString *par, NSUInteger intValue, NSString *strValue) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [this onParameterRead:par intValue:intValue strValue:strValue];
+        });
     };
     [_tap addParameterReadListener:_listenerFn];
     

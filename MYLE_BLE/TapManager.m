@@ -87,7 +87,11 @@
 {
     self = [super init];
     
-    _centralManager = [[CBCentralManager alloc] initWithDelegate:self queue:nil];
+    dispatch_queue_t centralQueue = dispatch_get_global_queue(QOS_CLASS_BACKGROUND, 0);
+    
+    _centralManager = [[CBCentralManager alloc] initWithDelegate:self
+                                                           queue:centralQueue
+                                                         options:@{ CBCentralManagerOptionRestoreIdentifierKey: @"myCentralManagerIdentifier" }];
     
     _currentPass = DEFAULT_TAP_PASSWORD;
     
@@ -111,6 +115,7 @@
     [_availableTaps removeAllObjects];
     
     // notify subscribers about cleared peripheral list
+    [self trace:@"broadcasting about scan changes"];
     [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                         object:nil
                                                       userInfo:@{ kTapNtfnType: @kTapNtfnTypeScan }];
@@ -166,11 +171,10 @@
 
 
 - (void)connect: (CBPeripheral*)peripheral pass:(NSString*)pass {
-    _currentPeripheral = peripheral;
     _currentUUID = peripheral.identifier.UUIDString;
     _currentPass = pass;
-    [_centralManager connectPeripheral:_currentPeripheral options:nil];
-    [self trace:@"Connecting to tap %@", _currentPeripheral.identifier.UUIDString];
+    [_centralManager connectPeripheral:peripheral options:nil];
+    [self trace:@"Connecting to tap %@", peripheral.identifier.UUIDString];
 }
 
 
@@ -218,6 +222,7 @@
         [_availableTaps addObject:peripheral];
         
         // notify subscribers abuout new peripheral
+        [self trace:@"broadcasting about scan changes"];
         [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                             object:nil
                                                           userInfo:@{ kTapNtfnType: @kTapNtfnTypeScan, kTapNtfnPeripheral: peripheral }];
@@ -234,7 +239,7 @@
 
 // Scan fail
 - (void)centralManager:(CBCentralManager *)central didFailToConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
-    [self trace:@"Failed to connect to tap %@", peripheral.identifier.UUIDString];
+    [self trace:@"Failed to connect to tap %@ with error %@", peripheral.identifier.UUIDString, error];
     [self cleanup];
 }
 
@@ -245,6 +250,7 @@
     
     [self trace:@"Connected to tap %@, stopped scanning", peripheral.identifier.UUIDString];
     
+    _currentPeripheral = peripheral;
     peripheral.delegate = self;
     
     NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:MYLE_SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
@@ -262,7 +268,7 @@
         [self cleanup];
         return;
     }
-    [self trace:@"discovering services: %@", peripheral.identifier.UUIDString, error];
+    [self trace:@"Discovering services: %@", peripheral.identifier.UUIDString];
     
     // List 2 characteristics
     NSArray * characteristics = [NSArray arrayWithObjects:
@@ -282,7 +288,7 @@
         [self cleanup];
         return;
     }
-    [self trace:@"discovering characteristics for service %@: %@", service.UUID.UUIDString, error];
+    [self trace:@"Discovered characteristics for service %@", service.UUID.UUIDString];
     
     if ([[service UUID] isEqual:[CBUUID UUIDWithString:BATTERY_SERVICE_UUID]]) {
         for (CBCharacteristic *characteristic in service.characteristics) {
@@ -299,92 +305,11 @@
                 [peripheral setNotifyValue:YES forCharacteristic:characteristic];
             } else if ([[characteristic UUID] isEqual:[CBUUID UUIDWithString:MYLE_WRITE_CHRT_UUID]]) {
                 _myleWriteChrt = characteristic;
+                
+                
             }
         }
-        
-        // Send password to board
-        _isAuthenticating = YES;
-        NSData *keyData = [self makeKey:_currentPass];
-        
-        [self trace:@"Sending password: %@", _currentPass];
-        
-        [_currentPeripheral writeValue:keyData forCharacteristic:_myleWriteChrt type:CBCharacteristicWriteWithoutResponse];
     }
-}
-
-
-- (NSData *)makeKey:(NSString *)password {
-    NSData *data;
-    NSData *passData = [_currentPass dataUsingEncoding:NSUTF8StringEncoding];
-    
-    Byte byteData[5] = { '5', '5', '0', '1', password.length & 0xff };
-    
-    data = [NSData dataWithBytes:byteData length:5];
-    
-    NSMutableData *concatenatedData = [[NSMutableData alloc] init];
-    [concatenatedData appendData:data];
-    [concatenatedData appendData:passData];
-    
-    return concatenatedData;
-}
-
-
-- (void) syncTime {
-    // Sync time to board
-    NSCalendar *calendar = [NSCalendar currentCalendar];
-    calendar.timeZone = [NSTimeZone timeZoneWithName:@"UTC"];
-    NSDateComponents *components = [calendar components:(NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond | NSCalendarUnitDay | NSCalendarUnitMonth | NSCalendarUnitYear) fromDate:[NSDate date]];
-    NSInteger hour, minute, second, day, month, year;
-    
-    hour = [components hour];
-    minute = [components minute];
-    second = [components second];
-    day = [components day];
-    month = [components month];
-    year = [components year];
-    
-    NSData *data = [[NSData alloc] init];
-    Byte byteData[10] = { '5', '5', '0', '0', second & 0xff, minute & 0xff, hour & 0xff, day & 0xff, month & 0xff, (year - 2000) & 0xff };
-    
-    data = [NSData dataWithBytes:byteData length:10];
-    [self trace:@"Sync time = %@", data];
-    
-    [_currentPeripheral writeValue:data forCharacteristic:_myleWriteChrt type:CBCharacteristicWriteWithoutResponse];
-    
-}
-
-
-- (void) verifyCheck {
-    if (!_isVerified) {
-        [self trace:@"Incorrect key. Disconnecting from tap $@...", _currentPeripheral.identifier.UUIDString];
-        
-        [_centralManager cancelPeripheralConnection:_currentPeripheral];
-    }
-}
-
-
--(NSDate*)getDateFromInt:(unsigned int)l
-{
-    NSDateComponents *c = [[NSCalendar currentCalendar] components:NSUIntegerMax fromDate:[NSDate date]];
-    [c setSecond:((l & 0x1f) * 2)];
-    l = l >> 5;
-    
-    [c setMinute:l & 0x3f];
-    l = l >> 6;
-    
-    [c setHour:l & 0x1f];
-    l = l >> 5;
-    
-    [c setDay:l & 0x1f];
-    l = l >> 5;
-    
-    [c setMonth:l & 0xf];
-    l = l >> 4;
-    
-    [c setYear:(l & 0x7f)];
-    
-    NSCalendar *cal = [NSCalendar currentCalendar];
-    return [cal dateFromComponents:c];
 }
 
 
@@ -450,16 +375,14 @@
         return [self trace:@"Error updating notification state for characteristic %@: %@", characteristic.UUID.UUIDString, error];
     }
     
-    if (characteristic == _batteryLevelChrt) {
-        [self trace:@"Changed notification state on battery level"];
-        return;
-    }
+    [self trace:@"Changed notification state to %@ on characteristic %@", characteristic.isNotifying ? @"NOTIFYING" : @"NOT NOTIFYING", characteristic.UUID.UUIDString];
     
-    if (characteristic == _myleReadChrt && !characteristic.isNotifying)
-    {
-        // Notification has stopped
-        [self trace:@"Cancel connection"];
-        [_centralManager cancelPeripheralConnection:peripheral];
+    if (characteristic == _myleReadChrt && characteristic.isNotifying) {
+        // Send password to board
+        _isAuthenticating = YES;
+    
+        [self trace:@"Sending password: %@", _currentPass];
+        [self sendPassword:_currentPass];
     }
 }
 
@@ -478,6 +401,7 @@
         [self disconnect];
         
         // notify subscribers about bad password
+        [self trace:@"Broadcasting about bad password"];
         [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                             object:nil
                                                           userInfo:@{ kTapNtfnType: @kTapNtfnTypeAuthFailed }];
@@ -491,14 +415,15 @@
     _isReceivingLogFile = false;
     _receiveMode = RECEIVE_NONE;
     _isConnected = NO;
+    _isAuthenticating = NO;
+    _myleReadChrt = nil;
+    _myleWriteChrt = nil;
+    _batteryLevelChrt = nil;
     
     [self trace:@"Disconnected from tap %@", peripheral.identifier.UUIDString];
     
-    // Scan for devices again
-    if (central.state == CBCentralManagerStatePoweredOn)
-    {
-        [self scanPeripherals];
-    }
+    [_centralManager connectPeripheral:peripheral options:nil];
+    [self trace:@"Connecting to tap once available %@", _currentPeripheral.identifier.UUIDString];
 }
 
 
@@ -581,16 +506,18 @@
     }
     else if (!([string rangeOfString:@"CONNECTED"].location == NSNotFound))
     {
-        _isAuthenticating = false;
-        _isConnected = true;
+        _isAuthenticating = NO;
+        _isConnected = YES;
         ret = true;
         
-        [self syncTime];
-        
         // notify subscribers about connected peripheral
+        [self trace:@"Broadcasting about connected tap"];
         [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                             object:nil
                                                           userInfo:@{ kTapNtfnType: @kTapNtfnTypeConnected }];
+        
+        [self trace:@"Sending current time"];
+        [self sendCurrentTime];
         
         return ret;
     } else if (!([string rangeOfString:@"5504"].location == NSNotFound)) {
@@ -689,6 +616,7 @@
             _receiveMode = RECEIVE_NONE;
             
             // notify subscribers about new file appearence
+            [self trace:@"Broadcsating about received file"];
             [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                                 object:nil
                                                               userInfo:@{ kTapNtfnType: @kTapNtfnTypeFile, kTapNtfnFilePath: filePath }];
@@ -796,6 +724,45 @@
 }
 
 
+- (void)sendPassword:(NSString*)password {
+    NSData *data;
+    NSData *passData = [password dataUsingEncoding:NSUTF8StringEncoding];
+    
+    Byte byteData[5] = { '5', '5', '0', '1', password.length & 0xff };
+    
+    data = [NSData dataWithBytes:byteData length:5];
+    
+    NSMutableData *concatenatedData = [[NSMutableData alloc] init];
+    [concatenatedData appendData:data];
+    [concatenatedData appendData:passData];
+    
+    [self sendParameter:concatenatedData];
+}
+
+
+- (void) sendCurrentTime {
+    // Sync time to board
+    NSCalendar *calendar = [NSCalendar currentCalendar];
+    calendar.timeZone = [NSTimeZone timeZoneWithName:@"UTC"];
+    NSDateComponents *components = [calendar components:(NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond | NSCalendarUnitDay | NSCalendarUnitMonth | NSCalendarUnitYear) fromDate:[NSDate date]];
+    NSInteger hour, minute, second, day, month, year;
+    
+    hour = [components hour];
+    minute = [components minute];
+    second = [components second];
+    day = [components day];
+    month = [components month];
+    year = [components year];
+    
+    NSData *data = [[NSData alloc] init];
+    Byte byteData[10] = { '5', '5', '0', '0', second & 0xff, minute & 0xff, hour & 0xff, day & 0xff, month & 0xff, (year - 2000) & 0xff };
+    
+    data = [NSData dataWithBytes:byteData length:10];
+    
+    [self sendParameter:data];
+}
+
+
 /************ UPDATE PARAMETER ****************/
 
 
@@ -895,13 +862,11 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 
 - (NSString*) getCurrentTapUUID
 {
-    return _currentPeripheral
-    ? _currentPeripheral.identifier.UUIDString
-    : nil;
+    return _currentUUID;
 }
 
 
-- (NSString*)getCurrentTapPassword {
+- (NSString*) getCurrentTapPassword {
     return _currentPass;
 }
 
@@ -969,6 +934,34 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
         }
     }
     return nil;
+}
+
+
+/****** UTILITY FUNCTIONS *************/
+
+
+-(NSDate*)getDateFromInt:(unsigned int)l
+{
+    NSDateComponents *c = [[NSCalendar currentCalendar] components:NSUIntegerMax fromDate:[NSDate date]];
+    [c setSecond:((l & 0x1f) * 2)];
+    l = l >> 5;
+    
+    [c setMinute:l & 0x3f];
+    l = l >> 6;
+    
+    [c setHour:l & 0x1f];
+    l = l >> 5;
+    
+    [c setDay:l & 0x1f];
+    l = l >> 5;
+    
+    [c setMonth:l & 0xf];
+    l = l >> 4;
+    
+    [c setYear:(l & 0x7f)];
+    
+    NSCalendar *cal = [NSCalendar currentCalendar];
+    return [cal dateFromComponents:c];
 }
 
 

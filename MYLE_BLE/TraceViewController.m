@@ -21,11 +21,13 @@
                                                                       style:UIBarButtonItemStylePlain
                                                                      target:self action:@selector(onParametersButtonTap)];
     
-    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
     [formatter setDateFormat:@"HH:mm:ss.SSS"];
     
     [[TapManager shared] addTraceListener:^(NSString *message) {
-        self.tvLog.text = [NSString stringWithFormat:@"%@: %@\r\n%@", [formatter stringFromDate:[NSDate date]], message, self.tvLog.text];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.tvLog.text = [NSString stringWithFormat:@"%@: %@\r\n%@", [formatter stringFromDate:[NSDate date]], message, self.tvLog.text];
+        });
     }];
 }
 

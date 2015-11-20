@@ -23,8 +23,9 @@ typedef void (^TraceListener)(NSString*);
 #define kTapNtfnPeripheral              @"Peripheral"
 
 #define kTapNtfnTypeScan                1 // indicates new devices are discovered
-#define kTapNtfnTypeStatus              2 // connection status
+#define kTapNtfnTypeConnected           2 // connection status
 #define kTapNtfnTypeFile                3 // recieved a file
+#define kTapNtfnTypeAuthFailed          4 // bad password
 
 #define PROGRESS_LOG_DELTA              0.1f
 
@@ -65,6 +66,9 @@ enum _RECEIVE_MODE {
 
 // Connects to a peripheral with given pass
 - (void)connect: (CBPeripheral*)peripheral pass:(NSString*)pass;
+
+// Disconnects currently connected peripheral
+- (void)disconnect;
 
 // Adds a listener for parameter read notification
 - (void)addParameterReadListener:(ReadParameterListener)listener;

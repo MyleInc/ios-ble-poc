@@ -12,8 +12,8 @@
 
 
 @interface TapManager()
-    - (void) notifyReadParameterListeners:(NSString*)parameterName intValue:(NSUInteger)intValue strValue:(NSString*) strValue;
-    - (void) trace:(NSString*)formatString, ...;
+- (void) notifyReadParameterListeners:(NSString*)parameterName intValue:(NSUInteger)intValue strValue:(NSString*) strValue;
+- (void) trace:(NSString*)formatString, ...;
 @end
 
 
@@ -24,14 +24,14 @@
     
     CBPeripheral *_currentPeripheral;
     
-    CBService* batteryService;
-    CBService* MyleMainService;
-    
-    CBCharacteristic* batteryLevel;
+    CBCharacteristic* _batteryLevelChrt;
+    CBCharacteristic* _myleReadChrt;
+    CBCharacteristic* _myleWriteChrt;
     
     NSString *_currentUUID;
     NSString *_currentPass;
     
+    BOOL _isAuthenticating;
     BOOL _isConnected;
     
     NSMutableArray *_availableTaps;
@@ -126,7 +126,7 @@
 - (void)scanPeripherals {
     [self clearTapList];
     
-    NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
+    NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:MYLE_SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
     [_centralManager scanForPeripheralsWithServices:servicesTap options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @NO }];
     [self trace:@"Scan started"];
 }
@@ -140,8 +140,7 @@
         for (CBService *service in _currentPeripheral.services) {
             if (service.characteristics != nil) {
                 for (CBCharacteristic *characteristic in service.characteristics) {
-                    if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_READ]] ||
-                        [characteristic.UUID isEqual:[CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_WRITE]] ||
+                    if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:MYLE_READ_CHRT_UUID]] ||
                         [characteristic.UUID isEqual:[CBUUID UUIDWithString:BATTERY_LEVEL_UUID]]) {
                         if (characteristic.isNotifying) {
                             [_currentPeripheral setNotifyValue:NO forCharacteristic:characteristic];
@@ -158,7 +157,8 @@
 
 
 - (void)disconnect {
-    if (_currentPeripheral != nil && _currentPeripheral.state == CBPeripheralStateConnecting) {
+    if (_currentPeripheral != nil) {
+        [self forgetCurrent];
         [_centralManager cancelPeripheralConnection:_currentPeripheral];
         [self trace:@"Disconnecting from tap %@", _currentPeripheral.identifier.UUIDString];
     }
@@ -222,16 +222,12 @@
                                                             object:nil
                                                           userInfo:@{ kTapNtfnType: @kTapNtfnTypeScan, kTapNtfnPeripheral: peripheral }];
     }
-
+    
     // check whether given peripheral is one that we were using last time
-    if ([peripheral.identifier.UUIDString isEqualToString:_currentUUID]) {
-        //Amotus. Connecting twise to the same device here. should filter double device. Did a quick fix with the isConnected for the debug app, but to be managed properly in a real app.
-        if (!_isConnected){
-            // yes, this is the one! auto connect
-            [self trace:@"Auto-connecting to previously used tap %@", peripheral.identifier.UUIDString];
-            [self connect:peripheral pass:_currentPass];
-            _isConnected = YES;
-        }
+    if ([peripheral.identifier.UUIDString isEqualToString:_currentUUID] && !_isConnected) {
+        // yes, this is the one! auto connect
+        [self trace:@"Auto-connecting to previously used tap %@", peripheral.identifier.UUIDString];
+        [self connect:peripheral pass:_currentPass];
     }
 }
 
@@ -249,18 +245,10 @@
     
     [self trace:@"Connected to tap %@, stopped scanning", peripheral.identifier.UUIDString];
     
-        peripheral.delegate = self;
-
-        NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
+    peripheral.delegate = self;
     
-        //    [peripheral discoverServices:@[[CBUUID UUIDWithString:SERVICE_UUID]]];
-        //[peripheral discoverServices:nil];
-        [peripheral discoverServices:servicesTap];
-    
-        // notify subscribers about connected peripheral
-        [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
-                                                                    object:nil
-                                                                    userInfo:@{ kTapNtfnType: @kTapNtfnTypeStatus }];
+    NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:MYLE_SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
+    [peripheral discoverServices:servicesTap];
 }
 
 
@@ -277,21 +265,51 @@
     [self trace:@"discovering services: %@", peripheral.identifier.UUIDString, error];
     
     // List 2 characteristics
-    NSArray * characteristics = [NSArray arrayWithObjects: [CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_READ], [CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_WRITE], [CBUUID UUIDWithString:CHARACTERISTIC_UUID_CONFIG], nil];
-    NSArray * characteristicsBAS = [NSArray arrayWithObjects: [CBUUID UUIDWithString:BATTERY_LEVEL_UUID], nil];
-    
+    NSArray * characteristics = [NSArray arrayWithObjects:
+                                 [CBUUID UUIDWithString:MYLE_READ_CHRT_UUID],
+                                 [CBUUID UUIDWithString:MYLE_WRITE_CHRT_UUID],
+                                 [CBUUID UUIDWithString:BATTERY_LEVEL_UUID], nil];
     for (CBService *service in peripheral.services) {
-        // battery service
-        if ([[service UUID] isEqual:[CBUUID UUIDWithString:batteryServiceUUIDString]]) {
-            batteryService = service;
-            [peripheral discoverCharacteristics:characteristicsBAS forService:service];
-        }
-        else {
-            MyleMainService = service;
-            [peripheral discoverCharacteristics:characteristics forService:service];
-        }
+        [peripheral discoverCharacteristics:characteristics forService:service];
     }
-//    int a = 1;
+}
+
+
+// List characteristics
+- (void)peripheral:(CBPeripheral *)peripheral didDiscoverCharacteristicsForService:(CBService *)service error:(NSError *)error {
+    if (error) {
+        [self trace:@"Error discovering characteristics for service %@: %@", service.UUID.UUIDString, error];
+        [self cleanup];
+        return;
+    }
+    [self trace:@"discovering characteristics for service %@: %@", service.UUID.UUIDString, error];
+    
+    if ([[service UUID] isEqual:[CBUUID UUIDWithString:BATTERY_SERVICE_UUID]]) {
+        for (CBCharacteristic *characteristic in service.characteristics) {
+            if ([[characteristic UUID] isEqual:[CBUUID UUIDWithString:BATTERY_LEVEL_UUID]]) {
+                _batteryLevelChrt = characteristic;
+                [peripheral setNotifyValue:YES forCharacteristic:characteristic];
+                break;
+            }
+        }
+    } else if ([[service UUID] isEqual:[CBUUID UUIDWithString:MYLE_SERVICE_UUID]]) {
+        for (CBCharacteristic *characteristic in service.characteristics) {
+            if ([[characteristic UUID] isEqual:[CBUUID UUIDWithString:MYLE_READ_CHRT_UUID]]) {
+                _myleReadChrt = characteristic;
+                [peripheral setNotifyValue:YES forCharacteristic:characteristic];
+            } else if ([[characteristic UUID] isEqual:[CBUUID UUIDWithString:MYLE_WRITE_CHRT_UUID]]) {
+                _myleWriteChrt = characteristic;
+            }
+        }
+        
+        // Send password to board
+        _isAuthenticating = YES;
+        NSData *keyData = [self makeKey:_currentPass];
+        
+        [self trace:@"Sending password: %@", _currentPass];
+        
+        [_currentPeripheral writeValue:keyData forCharacteristic:_myleWriteChrt type:CBCharacteristicWriteWithoutResponse];
+    }
 }
 
 
@@ -308,42 +326,6 @@
     [concatenatedData appendData:passData];
     
     return concatenatedData;
-}
-
-
-// List characteristics
-- (void)peripheral:(CBPeripheral *)peripheral didDiscoverCharacteristicsForService:(CBService *)service error:(NSError *)error {
-    if (error) {
-        [self trace:@"Error discovering characteristics for service %@: %@", service.UUID.UUIDString, error];
-        [self cleanup];
-        return;
-    }
-    [self trace:@"discovering characteristics for service %@: %@", service.UUID.UUIDString, error];
-
-    if ([[service UUID] isEqual:[CBUUID UUIDWithString:batteryServiceUUIDString]]) {
-        for (CBCharacteristic *characteristic in service.characteristics) {
-            [self trace:[NSString stringWithFormat:@"Character = %@", characteristic]];
-            if ([[characteristic UUID] isEqual:[CBUUID UUIDWithString:BATTERY_LEVEL_UUID]]) {
-                batteryLevel = characteristic;
-                //Use to enable or disable the notification from the battery service.
-                [peripheral setNotifyValue:YES forCharacteristic:characteristic];
-            }
-        }
-    }
-    else {
-        for (CBCharacteristic *characteristic in service.characteristics) {
-            [self trace:[NSString stringWithFormat:@"Character = %@", characteristic]];
-            //[self log:[NSString stringWithFormat:@"Character = %@", characteristic]];
-            [peripheral setNotifyValue:YES forCharacteristic:characteristic];
-        }
-
-        // Send password to board
-        NSData *keyData = [self makeKey:_currentPass];
-    
-        [self trace:@"Sending password: %@", _currentPass];
-    
-        [_currentPeripheral writeValue:keyData forCharacteristic:[[[_currentPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
-    }
 }
 
 
@@ -367,7 +349,7 @@
     data = [NSData dataWithBytes:byteData length:10];
     [self trace:@"Sync time = %@", data];
     
-    [_currentPeripheral writeValue:data forCharacteristic:[[[_currentPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
+    [_currentPeripheral writeValue:data forCharacteristic:_myleWriteChrt type:CBCharacteristicWriteWithoutResponse];
     
 }
 
@@ -421,32 +403,24 @@
     if (error) {
         return [self trace:@"Error updating value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
     }
-//    [self trace:@"updating value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
-
-    //Readback of the battery level
-    if ([[characteristic UUID] isEqual:[CBUUID UUIDWithString:BATTERY_LEVEL_UUID]]) {
-        if ([[characteristic.service UUID ] isEqual:[CBUUID UUIDWithString:BATTERY_SERVICE_UUID]]) {
-            [self readBatteryLevel:characteristic.value];
-            return;
-        }
-        else{
-            [self trace:@"battery level uuid not in battery service"];
-        }
+    
+    // Readback of the battery level
+    if (characteristic == _batteryLevelChrt) {
+        [self readBatteryLevel:characteristic.value];
     }
     
     // Not correct characteristics
-    if (![characteristic.UUID.UUIDString isEqualToString:CHARACTERISTIC_UUID_TO_READ])
-    {
+    if (characteristic != _myleReadChrt) {
         return;
     }
- 
+    
     /*********** RECEIVE PARAMETER VALUE ***************/
     if (!_isReceivingAudioFile && !_isReceivingLogFile) {
         if([self readParameter:characteristic.value]) { return; }
     }
     
     /*********** RECEIVE AUDIO FILE OR LOG FILE ********************/
-
+    
     if (_receiveMode == RECEIVE_AUDIO_FILE) {
         [self handleRecieveAudioFile: characteristic.value
                       withPeripheral: peripheral
@@ -475,20 +449,13 @@
     if (error) {
         return [self trace:@"Error updating notification state for characteristic %@: %@", characteristic.UUID.UUIDString, error];
     }
-
-    if ([[characteristic UUID] isEqual:[CBUUID UUIDWithString:BATTERY_LEVEL_UUID]]) {
+    
+    if (characteristic == _batteryLevelChrt) {
         [self trace:@"Changed notification state on battery level"];
         return;
     }
     
-    // Listen only 2 characterristics
-    if (![characteristic.UUID isEqual:[CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_READ]] &&
-        ![characteristic.UUID isEqual:[CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_WRITE]])
-    {
-        return;
-    }
-    
-    if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:CHARACTERISTIC_UUID_TO_READ]] && !characteristic.isNotifying)
+    if (characteristic == _myleReadChrt && !characteristic.isNotifying)
     {
         // Notification has stopped
         [self trace:@"Cancel connection"];
@@ -500,6 +467,22 @@
 // Disconnect peripheral
 - (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error
 {
+    if (error && error.code == 7 && _isAuthenticating) {
+        // code 7 means "The specified device has disconnected from us."
+        // so tap forces disconnection
+        // in case of authentication it means that password was incorrect
+        [self trace:@"Password doesn't match"];
+        
+        _isAuthenticating = NO;
+        
+        [self disconnect];
+        
+        // notify subscribers about bad password
+        [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
+                                                            object:nil
+                                                          userInfo:@{ kTapNtfnType: @kTapNtfnTypeAuthFailed }];
+    }
+    
     _currentPeripheral = nil;
     _progress = 0;
     _audioLength = 0;
@@ -507,10 +490,6 @@
     _logLength = 0;
     _isReceivingLogFile = false;
     _receiveMode = RECEIVE_NONE;
-
-    if (!_isConnected){
-        [self trace:@"Error disconnecting but not connected to any device"];
-    }
     _isConnected = NO;
     
     [self trace:@"Disconnected from tap %@", peripheral.identifier.UUIDString];
@@ -518,20 +497,14 @@
     // Scan for devices again
     if (central.state == CBCentralManagerStatePoweredOn)
     {
-        [self clearTapList];
-        NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
-        
-//        [_centralManager scanForPeripheralsWithServices:@[[CBUUID UUIDWithString:SERVICE_UUID]] options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @NO }];
-        [_centralManager scanForPeripheralsWithServices:servicesTap options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @NO }];
-
-        [self trace:@"Scanning started"];
+        [self scanPeripherals];
     }
 }
 
 
 - (NSUInteger) getFromBytes:(Byte *) byteData {
     int dv = byteData[2]-48;
-    int ch =byteData[1]-48;
+    int ch = byteData[1]-48;
     int ngh = byteData[0]-48;
     
     NSUInteger value = dv + ch*10 + ngh*100;
@@ -542,7 +515,7 @@
 - (Boolean) readBatteryLevel:(NSData *)data {
     Byte byteData[1] = { 0 };
     [data getBytes:byteData range:NSMakeRange(0, 1)];
-
+    
     [self trace:@"Battery level received: %d", byteData[0]];
     [self notifyReadParameterListeners:@"BATTERY_LEVEL" intValue:byteData[0] strValue:nil];
     return true;
@@ -608,7 +581,8 @@
     }
     else if (!([string rangeOfString:@"CONNECTED"].location == NSNotFound))
     {
-        _isVerified = true;
+        _isAuthenticating = false;
+        _isConnected = true;
         ret = true;
         
         [self syncTime];
@@ -616,7 +590,7 @@
         // notify subscribers about connected peripheral
         [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                             object:nil
-                                                          userInfo:@{ kTapNtfnType: @kTapNtfnTypeStatus }];
+                                                          userInfo:@{ kTapNtfnType: @kTapNtfnTypeConnected }];
         
         return ret;
     } else if (!([string rangeOfString:@"5504"].location == NSNotFound)) {
@@ -639,7 +613,7 @@
         NSString *UUIDStr = [NSString stringWithUTF8String:(const char *)UUID];
         [self trace:@"Bluetooth mac address: %@", UUIDStr];
         [self notifyReadParameterListeners:@"UUID" intValue:0 strValue:UUIDStr];
-
+        
     }
     return ret;
 }
@@ -677,7 +651,7 @@
         Byte byteData[2] = { numBytes & 0xff, numBytes >> 8 };
         NSData *data2 = [NSData dataWithBytes:byteData length:2];
         
-        [_currentPeripheral writeValue:data2 forCharacteristic:[[[_currentPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
+        [_currentPeripheral writeValue:data2 forCharacteristic:_myleWriteChrt type:CBCharacteristicWriteWithoutResponse];
         
         startTime = CACurrentMediaTime();
         
@@ -685,7 +659,6 @@
     else if (_audioBuffer.length < _audioLength)
     {
         static NSInteger numBytesTransfered = 0;
-        static unsigned int fileLength = 0;
         
         [_audioBuffer appendData:characteristic.value];
         
@@ -697,10 +670,7 @@
         
         if (_audioBuffer.length >= _audioLength)
         {
-            
             CFTimeInterval elapsedTime = CACurrentMediaTime() - startTime;
-            
-//            [peripheral setNotifyValue:NO forCharacteristic:characteristic];
             
             NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
             [formatter setDateFormat:RecordFileFormat];
@@ -712,13 +682,11 @@
             [self trace:[NSString stringWithFormat:@"Audio saved to %@", fileName]];
             [self trace:[NSString stringWithFormat:@"Transfer Speed %d B/s", (int)(_audioLength/elapsedTime)]];
             
-            
             // reset
             _audioLength = 0;
             _progress = 0;
             _isReceivingAudioFile = false;
             _receiveMode = RECEIVE_NONE;
-            fileLength = 0;
             
             // notify subscribers about new file appearence
             [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
@@ -728,7 +696,6 @@
         else{
             
             numBytesTransfered += characteristic.value.length;
-            fileLength += numBytesTransfered;
             
             NSInteger numBytes = CREDITBLE;
             if(_audioLength - _audioBuffer.length < CREDITBLE)
@@ -741,7 +708,7 @@
                 numBytesTransfered = 0;
                 Byte byteData[2] = { numBytes & 0xff, numBytes >> 8 };
                 NSData *data2 = [NSData dataWithBytes:byteData length:2];
-                [_currentPeripheral writeValue:data2 forCharacteristic:[[[_currentPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
+                [_currentPeripheral writeValue:data2 forCharacteristic:_myleWriteChrt type:CBCharacteristicWriteWithoutResponse];
             }
         }
     }
@@ -778,7 +745,7 @@
         _isReceivingLogFile = true;
         NSInteger numBytes = 235;
         NSData *data = [self IntToNSData:numBytes];
-        [_currentPeripheral writeValue:data forCharacteristic:[[[_currentPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
+        [_currentPeripheral writeValue:data forCharacteristic:_myleWriteChrt type:CBCharacteristicWriteWithoutResponse];
         
     }
     else if (_logBuffer.length < _logLength)
@@ -787,8 +754,6 @@
         
         if (_logBuffer.length >= _logLength)
         {
-//            [peripheral setNotifyValue:NO forCharacteristic:characteristic];
-            
             NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
             [formatter setDateFormat:RecordFileFormat];
             NSString *fileName = [NSString stringWithFormat:@"%@.log", [formatter stringFromDate:[self getDateFromInt:_logCreatedTime]]];
@@ -818,7 +783,7 @@
             {
                 numBytesTransfered = 0;
                 NSData *data = [self IntToNSData:numBytes];
-                [_currentPeripheral writeValue:data forCharacteristic:[[[_currentPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
+                [_currentPeripheral writeValue:data forCharacteristic:_myleWriteChrt type:CBCharacteristicWriteWithoutResponse];
             }
         }
     }
@@ -827,7 +792,7 @@
 
 - (void) sendParameter: (NSData *) data
 {
-    [_currentPeripheral writeValue:data forCharacteristic:[[[_currentPeripheral.services objectAtIndex:0] characteristics] objectAtIndex:1] type:CBCharacteristicWriteWithoutResponse];
+    [_currentPeripheral writeValue:data forCharacteristic:_myleWriteChrt type:CBCharacteristicWriteWithoutResponse];
 }
 
 
@@ -878,7 +843,7 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
     _currentPass = value;
     
     unichar passLength = { value.length & 0xff };
-
+    
     NSMutableData *data = getParameterDataFromString(@"5502PASS", [NSString stringWithCharacters:&passLength length:1]);
     
     [data appendData:[value dataUsingEncoding:NSUTF8StringEncoding]];
@@ -922,7 +887,7 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 }
 
 - (void)sendReadBATTERY_LEVEL {
-    [_currentPeripheral readValueForCharacteristic:batteryLevel];
+    [_currentPeripheral readValueForCharacteristic:_batteryLevelChrt];
 }
 
 /************ END READ PARAMETER ****************/
@@ -931,8 +896,8 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 - (NSString*) getCurrentTapUUID
 {
     return _currentPeripheral
-        ? _currentPeripheral.identifier.UUIDString
-        : nil;
+    ? _currentPeripheral.identifier.UUIDString
+    : nil;
 }
 
 

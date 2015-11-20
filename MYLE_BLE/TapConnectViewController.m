@@ -54,7 +54,7 @@
 - (void)onTapNotification:(NSNotification *)notification
 {
     int type = ((NSNumber*)notification.userInfo[kTapNtfnType]).intValue;
-    if (type == kTapNtfnTypeScan || type == kTapNtfnTypeStatus) {
+    if (type == kTapNtfnTypeScan || type == kTapNtfnTypeConnected) {
         [self.tableView reloadData];
     }
 }

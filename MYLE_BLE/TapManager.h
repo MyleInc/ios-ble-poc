@@ -70,6 +70,12 @@ enum _RECEIVE_MODE {
 // Disconnects currently connected peripheral
 - (void)disconnect;
 
+// Start scan
+- (void)startScan;
+
+// Stop scan
+- (void)stopScan;
+
 // Adds a listener for parameter read notification
 - (void)addParameterReadListener:(ReadParameterListener)listener;
 

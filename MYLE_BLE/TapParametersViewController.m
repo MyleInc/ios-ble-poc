@@ -127,13 +127,9 @@
     [defaults setValue:nil forKey:SETTINGS_PERIPHERAL_PASS];
     [defaults synchronize];
     
-    [_tap forgetCurrent];
+    [_tap disconnect];
     
-    // Show notification
-    UIAlertView *alert =[[UIAlertView alloc] initWithTitle: @"Reset complete"
-                                                   message: @"" delegate: nil
-                                         cancelButtonTitle: @"OK" otherButtonTitles:nil];
-    [alert show];
+    [self.navigationController popViewControllerAnimated:YES];
 }
 
 

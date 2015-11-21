@@ -31,6 +31,7 @@
     NSString *_currentUUID;
     NSString *_currentPass;
     
+    BOOL _isScanning;
     BOOL _isAuthenticating;
     BOOL _isConnected;
     
@@ -106,7 +107,15 @@
 
 - (NSArray*)getAvailableTaps
 {
-    return _availableTaps;
+    // for some reason scan takes sometimes too long
+    // at least we can show connected device as first in the list
+    NSMutableArray *taps = [[NSMutableArray alloc] initWithArray:[self isConnected] ? @[_currentPeripheral] : @[]];
+    for (CBPeripheral *p in _availableTaps) {
+        if (![taps containsObject:p]) {
+            [taps addObject:p];
+        }
+    }
+    return taps;
 }
 
 
@@ -115,7 +124,7 @@
     [_availableTaps removeAllObjects];
     
     // notify subscribers about cleared peripheral list
-    [self trace:@"broadcasting about scan changes"];
+    [self trace:@"Broadcasting about scan changes"];
     [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                         object:nil
                                                       userInfo:@{ kTapNtfnType: @kTapNtfnTypeScan }];
@@ -126,15 +135,6 @@
     return _isConnected;
 }
 
-
-// Scan periphrals with specific service UUID
-- (void)scanPeripherals {
-    [self clearTapList];
-    
-    NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:MYLE_SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
-    [_centralManager scanForPeripheralsWithServices:servicesTap options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @NO }];
-    [self trace:@"Scan started"];
-}
 
 
 // Clean up
@@ -160,6 +160,17 @@
     [_centralManager cancelPeripheralConnection:_currentPeripheral];
 }
 
+- (void)centralManager:(CBCentralManager *)central willRestoreState:(NSDictionary<NSString *, id> *)dict
+{
+    [self trace:@"willRestoreState %@", dict];
+    
+    NSArray *peripherals = dict[CBCentralManagerRestoredStatePeripheralsKey];
+    
+    [central connectPeripheral:peripherals[0] options:nil];
+    
+    [self trace:@"willRestoreState peripherals %@", peripherals];
+}
+
 
 - (void)disconnect {
     if (_currentPeripheral != nil) {
@@ -175,6 +186,28 @@
     _currentPass = pass;
     [_centralManager connectPeripheral:peripheral options:nil];
     [self trace:@"Connecting to tap %@", peripheral.identifier.UUIDString];
+}
+
+
+// Start scan
+- (void)startScan {
+    if (_isScanning) { return; }
+    
+    _isScanning = YES;
+    
+    [self clearTapList];
+    
+    NSArray *servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:MYLE_SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
+    [_centralManager scanForPeripheralsWithServices:servicesTap options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
+    [self trace:@"Scan started"];
+}
+
+// Stop scan
+- (void)stopScan {
+    _isScanning = NO;
+    
+    [_centralManager stopScan];
+    [self trace:@"Scan stopped"];
 }
 
 
@@ -198,7 +231,7 @@
             
         case CBCentralManagerStatePoweredOn:
             [self trace:@"BLE state: powered on"];
-            [self scanPeripherals];
+            [self startScan];
             break;
             
         case CBCentralManagerStateResetting:
@@ -212,24 +245,25 @@
 }
 
 
-//Scan success
 - (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI {
-    
-    [self trace:@"Discovered peripheral %@ with advertisement data: %@", peripheral.identifier.UUIDString, advertisementData];
-    
     // if devices is not in our list - add it and notify subscribers
-    if (![_availableTaps containsObject:peripheral]) {
-        [_availableTaps addObject:peripheral];
+    if ([_availableTaps containsObject:peripheral]) { return; }
+    
+    [_availableTaps addObject:peripheral];
         
-        // notify subscribers abuout new peripheral
-        [self trace:@"broadcasting about scan changes"];
-        [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
+    [self trace:@"Discovered peripheral %@ with advertisement data: %@", peripheral.identifier.UUIDString, advertisementData];
+        
+    // notify subscribers abuout new peripheral
+    [self trace:@"Broadcasting about scan changes"];
+    [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                             object:nil
                                                           userInfo:@{ kTapNtfnType: @kTapNtfnTypeScan, kTapNtfnPeripheral: peripheral }];
-    }
     
     // check whether given peripheral is one that we were using last time
     if ([peripheral.identifier.UUIDString isEqualToString:_currentUUID] && !_isConnected) {
+        // NOTE: for some reason auto-connection through retrievePeripheralsWithIdentifiers + connectPeripheral doesn't work
+        // so we do autoconnections manually through scan
+            
         // yes, this is the one! auto connect
         [self trace:@"Auto-connecting to previously used tap %@", peripheral.identifier.UUIDString];
         [self connect:peripheral pass:_currentPass];
@@ -246,9 +280,9 @@
 
 // Connect device success callback
 - (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
-    [_centralManager stopScan];
+    [self stopScan];
     
-    [self trace:@"Connected to tap %@, stopped scanning", peripheral.identifier.UUIDString];
+    [self trace:@"Connected to tap %@]", peripheral.identifier.UUIDString];
     
     _currentPeripheral = peripheral;
     peripheral.delegate = self;
@@ -390,21 +424,30 @@
 // Disconnect peripheral
 - (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error
 {
-    if (error && error.code == 7 && _isAuthenticating) {
+    [self trace:@"Disconnected from tap %@", peripheral.identifier.UUIDString];
+    
+    if (error && error.code == 7) {
         // code 7 means "The specified device has disconnected from us."
         // so tap forces disconnection
-        // in case of authentication it means that password was incorrect
-        [self trace:@"Password doesn't match"];
         
-        _isAuthenticating = NO;
+        if (_isAuthenticating) {
+            // in case of authentication it means that password was incorrect
+            [self trace:@"Password doesn't match"];
         
-        [self disconnect];
+            _isAuthenticating = NO;
         
-        // notify subscribers about bad password
-        [self trace:@"Broadcasting about bad password"];
-        [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
+            [self disconnect];
+        
+            // notify subscribers about bad password
+            [self trace:@"Broadcasting about bad password"];
+            [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                             object:nil
-                                                          userInfo:@{ kTapNtfnType: @kTapNtfnTypeAuthFailed }];
+                                                              userInfo:@{ kTapNtfnType: @kTapNtfnTypeAuthFailed }];
+        } else {
+            // otherwise - some unnessesary diconnection, try to reconnect
+            [_centralManager connectPeripheral:peripheral options:nil];
+            [self trace:@"Will connect to tap once it's available %@", _currentPeripheral.identifier.UUIDString];
+        }
     }
     
     _currentPeripheral = nil;
@@ -419,11 +462,6 @@
     _myleReadChrt = nil;
     _myleWriteChrt = nil;
     _batteryLevelChrt = nil;
-    
-    [self trace:@"Disconnected from tap %@", peripheral.identifier.UUIDString];
-    
-    [_centralManager connectPeripheral:peripheral options:nil];
-    [self trace:@"Connecting to tap once available %@", _currentPeripheral.identifier.UUIDString];
 }
 
 

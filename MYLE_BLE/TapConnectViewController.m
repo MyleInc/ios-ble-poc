@@ -37,12 +37,16 @@
                                              selector:@selector(onTapNotification:)
                                                  name:kTapNtfn
                                                object:nil];
+    
+    [_tap startScan];
 }
 
 
 // disconnect when comeback to ScanViewController
 -(void) viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
+    
+    [_tap stopScan];
     
     // unsubscribe from new peripheral notifications
     [[NSNotificationCenter defaultCenter] removeObserver:self
@@ -53,10 +57,12 @@
 
 - (void)onTapNotification:(NSNotification *)notification
 {
-    int type = ((NSNumber*)notification.userInfo[kTapNtfnType]).intValue;
-    if (type == kTapNtfnTypeScan || type == kTapNtfnTypeConnected) {
-        [self.tableView reloadData];
-    }
+    dispatch_async(dispatch_get_main_queue(), ^{
+        int type = ((NSNumber*)notification.userInfo[kTapNtfnType]).intValue;
+        if (type == kTapNtfnTypeScan || type == kTapNtfnTypeConnected) {
+            [self.tableView reloadData];
+        }
+    });
 }
 
 

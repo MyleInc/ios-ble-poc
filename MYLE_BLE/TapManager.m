@@ -21,8 +21,8 @@
 @implementation TapManager
 {
     CBCentralManager *_centralManager;
-    
     CBPeripheral *_currentPeripheral;
+    CBPeripheral *_peripheralTempRef;
     
     CBCharacteristic* _batteryLevelChrt;
     CBCharacteristic* _myleReadChrt;
@@ -92,7 +92,7 @@
     
     _centralManager = [[CBCentralManager alloc] initWithDelegate:self
                                                            queue:centralQueue
-                                                         options:@{ CBCentralManagerOptionRestoreIdentifierKey: @"myCentralManagerIdentifier" }];
+                                                         options:@{ CBCentralManagerOptionRestoreIdentifierKey: @"myleCentralManager" }];
     
     _currentPass = DEFAULT_TAP_PASSWORD;
     
@@ -160,17 +160,6 @@
     [_centralManager cancelPeripheralConnection:_currentPeripheral];
 }
 
-- (void)centralManager:(CBCentralManager *)central willRestoreState:(NSDictionary<NSString *, id> *)dict
-{
-    [self trace:@"willRestoreState %@", dict];
-    
-    NSArray *peripherals = dict[CBCentralManagerRestoredStatePeripheralsKey];
-    
-    [central connectPeripheral:peripherals[0] options:nil];
-    
-    [self trace:@"willRestoreState peripherals %@", peripherals];
-}
-
 
 - (void)disconnect {
     if (_currentPeripheral != nil) {
@@ -198,16 +187,81 @@
     [self clearTapList];
     
     NSArray *servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:MYLE_SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
-    [_centralManager scanForPeripheralsWithServices:servicesTap options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @YES }];
+    [_centralManager scanForPeripheralsWithServices:servicesTap options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @NO }];
     [self trace:@"Scan started"];
 }
 
 // Stop scan
 - (void)stopScan {
+    if (!_isScanning) { return; }
+    
     _isScanning = NO;
     
     [_centralManager stopScan];
     [self trace:@"Scan stopped"];
+}
+
+
+-(CBService*)getService:(NSString*) serviceUUID forPeripheral:(CBPeripheral*)p {
+    for (CBService *s in p.services) {
+        if ([s.UUID.UUIDString isEqual:serviceUUID]) {
+            return s;
+        }
+    }
+    return nil;
+}
+
+-(CBCharacteristic*)getCharacteristic:(NSString*) characteristicUUID forService:(CBService*)s {
+    for (CBCharacteristic *c in s.characteristics) {
+        if ([c.UUID.UUIDString isEqual:characteristicUUID]) {
+            return c;
+        }
+    }
+    return nil;
+}
+
+
+// Ensures services and characteristics are disconvered for the peripheral
+-(void)ensurePeripheralIsInitialized:(CBPeripheral*) peripheral {
+    if (!peripheral) { return; }
+    
+    [self trace:@"Looks like we are in state restoration state, ensure peripheral is initialized..."];
+    
+    if (peripheral.state == CBPeripheralStateConnected) {
+        // have we disconvered the our services?
+        CBService *myleService = [self getService:MYLE_SERVICE_UUID forPeripheral:peripheral];
+        CBService *batteryService = [self getService:BATTERY_SERVICE_UUID forPeripheral:peripheral];
+        if (!myleService || !batteryService) {
+            // we haven't yet!
+            NSArray *services = @[[CBUUID UUIDWithString:MYLE_SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID]];
+            [peripheral discoverServices:services];
+            return;
+        }
+        
+        // have we discovered MYLE characteristics?
+        _myleReadChrt = [self getCharacteristic:MYLE_READ_CHRT_UUID forService:myleService];
+        _myleWriteChrt = [self getCharacteristic:MYLE_WRITE_CHRT_UUID forService:myleService];
+        if (!_myleReadChrt || !_myleWriteChrt) {
+            [peripheral discoverCharacteristics:@[MYLE_READ_CHRT_UUID, MYLE_WRITE_CHRT_UUID] forService:myleService];
+            return;
+        }
+        
+        // have we discovered battery characteristics?
+        _batteryLevelChrt = [self getCharacteristic:BATTERY_LEVEL_UUID forService:batteryService];
+        if (!_batteryLevelChrt) {
+            [peripheral discoverCharacteristics:@[BATTERY_LEVEL_UUID] forService:batteryService];
+            return;
+        }
+        
+        // are we subscribed?
+        if (!_myleReadChrt.isNotifying) {
+            [peripheral setNotifyValue:YES forCharacteristic:_myleReadChrt];
+        }
+        
+        if (!_batteryLevelChrt.isNotifying) {
+            [peripheral setNotifyValue:YES forCharacteristic:_batteryLevelChrt];
+        }
+    }
 }
 
 
@@ -227,11 +281,16 @@
             
         case CBCentralManagerStatePoweredOff:
             [self trace:@"BLE state: powered off"];
+            [self centralManager:central didDisconnectPeripheral:_currentPeripheral error:nil];
             break;
             
         case CBCentralManagerStatePoweredOn:
             [self trace:@"BLE state: powered on"];
-            [self startScan];
+            if (_currentPeripheral) {
+                [self ensurePeripheralIsInitialized:_currentPeripheral];
+            } else {
+                [self startScan];
+            }
             break;
             
         case CBCentralManagerStateResetting:
@@ -266,7 +325,7 @@
             
         // yes, this is the one! auto connect
         [self trace:@"Auto-connecting to previously used tap %@", peripheral.identifier.UUIDString];
-        [self connect:peripheral pass:_currentPass];
+        [_centralManager connectPeripheral:peripheral options:nil];
     }
 }
 
@@ -292,11 +351,73 @@
 }
 
 
+// Disconnect peripheral
+- (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error
+{
+    [self trace:@"Disconnected from tap %@ (error: %@)", peripheral.identifier.UUIDString, error];
+    
+    if (error) {
+        if (error.code == 7 && _isAuthenticating) {
+            // code 7 means "The specified device has disconnected from us."
+            // so tap forces disconnection
+            // in case of authentication it means that password was incorrect
+            [self trace:@"Password doesn't match"];
+            
+            _isAuthenticating = NO;
+            
+            [self disconnect];
+            
+            // notify subscribers about bad password
+            [self trace:@"Broadcasting about bad password"];
+            [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
+                                                                object:nil
+                                                              userInfo:@{ kTapNtfnType: @kTapNtfnTypeAuthFailed }];
+        } else {
+            // otherwise - some unnessesary diconnection, try to reconnect
+            [self trace:@"Will connect to tap once it's available %@", peripheral.identifier.UUIDString];
+            [_centralManager connectPeripheral:peripheral options:nil];
+            
+            // keep reference to given peripheral, so CoreBluetooth would think we are still interested in it
+            // Otherwise we would see the following error:
+            // API MISUSE: Cancelling connection for unused peripheral <CBPeripheral: 0x15577240, identifier = 5F7B3540-AEA0-01FD-6CF2-C2570F18E0A9, name = MYLE, state = connecting>, Did you forget to keep a reference to it?
+            // We could use _currentPeripheral for that, but it's better to separate them,
+            // because _currentPeripheral reflects currently connected peripheral,
+            // while _peripheralTempRef - just to make CoreBluetooth happy
+
+            _peripheralTempRef = peripheral;
+        }
+    }
+    
+    _currentPeripheral = nil;
+    _progress = 0;
+    _audioLength = 0;
+    _isReceivingAudioFile = false;
+    _logLength = 0;
+    _isReceivingLogFile = false;
+    _receiveMode = RECEIVE_NONE;
+    _isConnected = NO;
+    _isAuthenticating = NO;
+    _myleReadChrt = nil;
+    _myleWriteChrt = nil;
+    _batteryLevelChrt = nil;
+}
+
+
+- (void)centralManager:(CBCentralManager *)central willRestoreState:(NSDictionary<NSString *, id> *)dict {
+    [self trace:@"Restoring BT state with data: %@", dict];
+    
+    NSArray *peripherals = dict[CBCentralManagerRestoredStatePeripheralsKey];
+    if (peripherals.count) {
+        _currentPeripheral = [peripherals firstObject];
+        _currentPeripheral.delegate = self;
+    }
+}
+
+
 #pragma mark - CBPeripheralDelegate Methods
 
 // List services
 - (void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(NSError *)error {
-    
     if (error) {
         [self trace:@"Error discovering services: %@", peripheral.identifier.UUIDString, error];
         [self cleanup];
@@ -325,23 +446,15 @@
     [self trace:@"Discovered characteristics for service %@", service.UUID.UUIDString];
     
     if ([[service UUID] isEqual:[CBUUID UUIDWithString:BATTERY_SERVICE_UUID]]) {
-        for (CBCharacteristic *characteristic in service.characteristics) {
-            if ([[characteristic UUID] isEqual:[CBUUID UUIDWithString:BATTERY_LEVEL_UUID]]) {
-                _batteryLevelChrt = characteristic;
-                [peripheral setNotifyValue:YES forCharacteristic:characteristic];
-                break;
-            }
+        _batteryLevelChrt = [self getCharacteristic:BATTERY_LEVEL_UUID forService:service];
+        if (_batteryLevelChrt) {
+            [peripheral setNotifyValue:YES forCharacteristic:_batteryLevelChrt];
         }
     } else if ([[service UUID] isEqual:[CBUUID UUIDWithString:MYLE_SERVICE_UUID]]) {
-        for (CBCharacteristic *characteristic in service.characteristics) {
-            if ([[characteristic UUID] isEqual:[CBUUID UUIDWithString:MYLE_READ_CHRT_UUID]]) {
-                _myleReadChrt = characteristic;
-                [peripheral setNotifyValue:YES forCharacteristic:characteristic];
-            } else if ([[characteristic UUID] isEqual:[CBUUID UUIDWithString:MYLE_WRITE_CHRT_UUID]]) {
-                _myleWriteChrt = characteristic;
-                
-                
-            }
+        _myleWriteChrt = [self getCharacteristic:MYLE_WRITE_CHRT_UUID forService:service];
+        _myleReadChrt = [self getCharacteristic:MYLE_READ_CHRT_UUID forService:service];
+        if (_myleReadChrt) {
+            [peripheral setNotifyValue:YES forCharacteristic:_myleReadChrt];
         }
     }
 }
@@ -394,12 +507,6 @@
 }
 
 
-// Convert Integer to NSData
--(NSData *) IntToNSData:(NSInteger)data
-{
-    Byte byteData[1] = { data & 0xff };
-    return [NSData dataWithBytes:byteData length:1];
-}
 
 
 // Update notification from peripheral
@@ -421,49 +528,16 @@
 }
 
 
-// Disconnect peripheral
-- (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error
-{
-    [self trace:@"Disconnected from tap %@", peripheral.identifier.UUIDString];
-    
-    if (error && error.code == 7) {
-        // code 7 means "The specified device has disconnected from us."
-        // so tap forces disconnection
-        
-        if (_isAuthenticating) {
-            // in case of authentication it means that password was incorrect
-            [self trace:@"Password doesn't match"];
-        
-            _isAuthenticating = NO;
-        
-            [self disconnect];
-        
-            // notify subscribers about bad password
-            [self trace:@"Broadcasting about bad password"];
-            [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
-                                                            object:nil
-                                                              userInfo:@{ kTapNtfnType: @kTapNtfnTypeAuthFailed }];
-        } else {
-            // otherwise - some unnessesary diconnection, try to reconnect
-            [_centralManager connectPeripheral:peripheral options:nil];
-            [self trace:@"Will connect to tap once it's available %@", _currentPeripheral.identifier.UUIDString];
-        }
-    }
-    
-    _currentPeripheral = nil;
-    _progress = 0;
-    _audioLength = 0;
-    _isReceivingAudioFile = false;
-    _logLength = 0;
-    _isReceivingLogFile = false;
-    _receiveMode = RECEIVE_NONE;
-    _isConnected = NO;
-    _isAuthenticating = NO;
-    _myleReadChrt = nil;
-    _myleWriteChrt = nil;
-    _batteryLevelChrt = nil;
-}
+#pragma mark - Utilities
 
+
+
+// Convert Integer to NSData
+-(NSData *) IntToNSData:(NSInteger)data
+{
+    Byte byteData[1] = { data & 0xff };
+    return [NSData dataWithBytes:byteData length:1];
+}
 
 - (NSUInteger) getFromBytes:(Byte *) byteData {
     int dv = byteData[2]-48;

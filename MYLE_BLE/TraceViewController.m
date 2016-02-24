@@ -22,7 +22,7 @@
                                                                      target:self action:@selector(onParametersButtonTap)];
     
     NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
-    [formatter setDateFormat:@"HH:mm:ss.SSS"];
+    [formatter setDateFormat:@"mm:ss.SSS"];
     
     [[TapManager shared] addTraceListener:^(NSString *message) {
         dispatch_async(dispatch_get_main_queue(), ^{

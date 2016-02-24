@@ -35,6 +35,9 @@
     
     self.scrollView.contentSize = CGSizeMake(self.scrollView.superview.frame.size.width, 600);
     
+    self.tfBATTERY_LEVEL.enabled = NO;
+    self.tfVERSION.enabled = NO;
+    
     [self readAll];
 }
 

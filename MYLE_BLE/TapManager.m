@@ -476,6 +476,8 @@
 {
     if (error) {
         return [self trace:@"Error updating value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
+    } else {
+        [self trace:@"[>] Received in charc %@:\r\n%@", (characteristic.UUID.UUIDString.length >= 8) ? [characteristic.UUID.UUIDString substringToIndex:8] :characteristic.UUID.UUIDString, characteristic.value];
     }
     
     // Readback of the battery level
@@ -691,7 +693,7 @@
         Byte byteData[2] = { numBytes & 0xff, numBytes >> 8 };
         NSData *data2 = [NSData dataWithBytes:byteData length:2];
         
-        [_currentPeripheral writeValue:data2 forCharacteristic:_myleWriteChrt type:CBCharacteristicWriteWithoutResponse];
+        [self writeValue:data2 forCharc:_myleWriteChrt];
         
         startTime = CACurrentMediaTime();
         
@@ -749,7 +751,7 @@
                 numBytesTransfered = 0;
                 Byte byteData[2] = { numBytes & 0xff, numBytes >> 8 };
                 NSData *data2 = [NSData dataWithBytes:byteData length:2];
-                [_currentPeripheral writeValue:data2 forCharacteristic:_myleWriteChrt type:CBCharacteristicWriteWithoutResponse];
+                [self writeValue:data2 forCharc:_myleWriteChrt];
             }
         }
     }
@@ -786,8 +788,7 @@
         _isReceivingLogFile = true;
         NSInteger numBytes = 235;
         NSData *data = [self IntToNSData:numBytes];
-        [_currentPeripheral writeValue:data forCharacteristic:_myleWriteChrt type:CBCharacteristicWriteWithoutResponse];
-        
+        [self writeValue:data forCharc:_myleWriteChrt];
     }
     else if (_logBuffer.length < _logLength)
     {
@@ -824,16 +825,23 @@
             {
                 numBytesTransfered = 0;
                 NSData *data = [self IntToNSData:numBytes];
-                [_currentPeripheral writeValue:data forCharacteristic:_myleWriteChrt type:CBCharacteristicWriteWithoutResponse];
+                [self writeValue:data forCharc:_myleWriteChrt];
             }
         }
     }
 }
 
 
+- (void) writeValue:(NSData *)value forCharc:(CBCharacteristic*)charc
+{
+    [self trace:@"[<] Sent to charc %@:\r\n%@", (charc.UUID.UUIDString.length >= 8) ? [charc.UUID.UUIDString substringToIndex:8] : charc.UUID.UUIDString, value];
+    [_currentPeripheral writeValue:value forCharacteristic:charc type:CBCharacteristicWriteWithoutResponse];
+}
+
+
 - (void) sendParameter: (NSData *) data
 {
-    [_currentPeripheral writeValue:data forCharacteristic:_myleWriteChrt type:CBCharacteristicWriteWithoutResponse];
+    [self writeValue:data forCharc:_myleWriteChrt];
 }
 
 
@@ -1028,7 +1036,9 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
     
     va_list args;
     va_start(args, formatString);
-    NSString *message = [[NSString alloc] initWithFormat:formatString arguments:args];
+    NSMutableString *format = [formatString mutableCopy];
+    [format appendString:@"\r\n"];
+    NSString *message = [[NSString alloc] initWithFormat:format arguments:args];
     va_end(args);
     
     for (TraceListener listener in _traceListeners) {

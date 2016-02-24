@@ -59,7 +59,7 @@
     [_tap sendReadACCELERSENS];
     [_tap sendReadMIC];
     [_tap sendReadBTLOC];
-    [_tap sendReadUUID];
+    [_tap sendReadMAC];
     [_tap sendReadVERSION];
     [_tap sendReadBATTERY_LEVEL];
     
@@ -83,7 +83,7 @@
         self.tfBTLOC.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
     } else if ([par isEqual: @"VERSION"]) {
         self.tfVERSION.text = strValue;
-    } else if ([par isEqual: @"UUID"]) {
+    } else if ([par isEqual: @"MAC"]) {
         self.tvUUID.text = strValue;
     } else if ([par isEqual: @"BATTERY_LEVEL"]) {
         self.tfBATTERY_LEVEL.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];

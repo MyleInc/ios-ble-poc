@@ -20,6 +20,7 @@ typedef void (^TraceListener)(NSString*);
 #define kTapNtfn                        @"TapNotification"
 #define kTapNtfnType                    @"Type"
 #define kTapNtfnFilePath                @"FilePath" // path to a recieved file
+#define kTapNtfnMAC                     @"MAC"      // MAC address of a TAP
 #define kTapNtfnPeripheral              @"Peripheral"
 
 #define kTapNtfnTypeScan                1 // indicates new devices are discovered
@@ -95,7 +96,7 @@ enum _RECEIVE_MODE {
 
 - (void)sendReadRECLN;
 - (void)sendReadBTLOC;
-- (void)sendReadUUID;
+- (void)sendReadMAC;
 - (void)sendReadPAUSELEVEL;
 - (void)sendReadPAUSELEN;
 - (void)sendReadACCELERSENS;

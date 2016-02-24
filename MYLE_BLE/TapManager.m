@@ -30,6 +30,7 @@
     
     NSString *_currentUUID;
     NSString *_currentPass;
+    NSString *_currentMAC;
     
     BOOL _isScanning;
     BOOL _isAuthenticating;
@@ -388,6 +389,7 @@
         }
     }
     
+    _currentMAC = nil;
     _currentPeripheral = nil;
     _progress = 0;
     _audioLength = 0;
@@ -630,6 +632,7 @@
         
         [self trace:@"Sending current time"];
         [self sendCurrentTime];
+        [self sendReadMAC];
         
         return ret;
     } else if (!([string rangeOfString:@"5504"].location == NSNotFound)) {
@@ -645,13 +648,11 @@
         
         ret = true;
     } else if (!([string rangeOfString:@"5503UUID"].location == NSNotFound)) {
-        Byte UUID[20] = { 0 };
-        
-        [data getBytes:UUID range:NSMakeRange(@"5503UUID".length, data.length - @"5503UUID".length)];
+        Byte mac[20] = { 0 };
+        [data getBytes:mac range:NSMakeRange(@"5503UUID".length, data.length - @"5503UUID".length)];
         ret = true;
-        NSString *UUIDStr = [NSString stringWithUTF8String:(const char *)UUID];
-        [self trace:@"Bluetooth mac address: %@", UUIDStr];
-        [self notifyReadParameterListeners:@"UUID" intValue:0 strValue:UUIDStr];
+        _currentMAC = [NSString stringWithFormat:@"%c%c:%c%c:%c%c:%c%c:%c%c:%c%c", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], mac[6], mac[7], mac[8], mac[9], mac[10], mac[11]];
+        [self notifyReadParameterListeners:@"MAC" intValue:0 strValue:_currentMAC];
         
     }
     return ret;
@@ -719,7 +720,7 @@
             [_audioBuffer writeToFile:filePath atomically:YES];
             
             [self trace:[NSString stringWithFormat:@"Audio saved to %@", fileName]];
-            [self trace:[NSString stringWithFormat:@"Transfer Speed %d B/s", (int)(_audioLength/elapsedTime)]];
+            [self trace:[NSString stringWithFormat:@"Transfer speed %d B/s", (int)(_audioLength/elapsedTime)]];
             
             // reset
             _audioLength = 0;
@@ -728,10 +729,10 @@
             _receiveMode = RECEIVE_NONE;
             
             // notify subscribers about new file appearence
-            [self trace:@"Broadcsating about received file"];
+            [self trace:@"Broadcasting about received file"];
             [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                                 object:nil
-                                                              userInfo:@{ kTapNtfnType: @kTapNtfnTypeFile, kTapNtfnFilePath: filePath }];
+                                                              userInfo:@{ kTapNtfnType: @kTapNtfnTypeFile, kTapNtfnFilePath: filePath, kTapNtfnMAC: _currentMAC }];
         }
         else{
             
@@ -941,7 +942,7 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
     [self sendParameter:getParameterDataFromString(@"5503BTLOC", @"")];
 }
 
-- (void)sendReadUUID {
+- (void)sendReadMAC {
     [self sendParameter:getParameterDataFromString(@"5503UUID", @"")];
 }
 

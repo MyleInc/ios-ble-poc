@@ -327,7 +327,9 @@
             
         case CBCentralManagerStatePoweredOff:
             [self trace:@"BLE state: powered off"];
-            [self centralManager:central didDisconnectPeripheral:_currentPeripheral error:nil];
+            if (_currentPeripheral) {
+                [self centralManager:central didDisconnectPeripheral:_currentPeripheral error:nil];
+            }
             break;
             
         case CBCentralManagerStatePoweredOn:
@@ -351,14 +353,17 @@
 
 
 - (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI {
-   // [self trace:@"I'e found a device"];
+    // Acording to http://stackoverflow.com/questions/25390484/obtaining-bluetooth-le-scan-response-data-with-ios#comment46402518_25392156
+    // didDiscoverPeripheral is called twice: one time with advertisment data and the seconds time with scan response
+    // NOTE: in background mode the second call may not occur, so we will have to cache it in order to get MAC address for auto-reconnection
+    
+    [self trace:@"Discovered peripheral %@ with advertisement data: %@", peripheral, advertisementData];
+    
     // if devices is not in our list - add it and notify subscribers
     if ([_availableTaps containsObject:peripheral]) { return; }
     
     [_availableTaps addObject:peripheral];
-        
-    [self trace:@"Discovered peripheral %@ with advertisement data: %@", peripheral.identifier.UUIDString, advertisementData];
-        
+
     // notify subscribers abuout new peripheral
     [self trace:@"Broadcasting about scan changes"];
     [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
@@ -996,7 +1001,7 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 }
 
 - (void)sendReadPASSWORD {
-    [_currentPeripheral readValueForCharacteristic:_SETTING_PASSWORD];
+    //[_currentPeripheral readValueForCharacteristic:_SETTING_PASSWORD];
 }
 
 - (void)sendReadVERSION {

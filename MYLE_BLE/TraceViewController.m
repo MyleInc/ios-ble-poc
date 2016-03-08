@@ -29,6 +29,9 @@
             self.tvLog.text = [NSString stringWithFormat:@"%@: %@\r\n%@", [formatter stringFromDate:[NSDate date]], message, self.tvLog.text];
         });
     }];
+    
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [TapManager setup:[defaults valueForKey:SETTINGS_PERIPHERAL_UUID] pass:[defaults valueForKey:SETTINGS_PERIPHERAL_PASS]];
 }
 
 

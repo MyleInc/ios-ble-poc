@@ -20,8 +20,6 @@
 {
     [Fabric with:@[CrashlyticsKit]];
 
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    [TapManager setup:[defaults valueForKey:SETTINGS_PERIPHERAL_UUID] pass:[defaults valueForKey:SETTINGS_PERIPHERAL_PASS]];
     return YES;
 }
 							

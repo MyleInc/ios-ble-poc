@@ -885,14 +885,14 @@
 
 - (void)sendPassword:(NSString*)password {
     NSData *passwordData = [password dataUsingEncoding:NSUTF8StringEncoding];
-    passwordData = (passwordData.length > 12)
-        ? [passwordData subdataWithRange:NSMakeRange(0, 12)]
+    passwordData = (passwordData.length > 11)
+        ? [passwordData subdataWithRange:NSMakeRange(0, 11)]
         : passwordData;
     
     NSMutableData *paddedData = [NSMutableData dataWithData:passwordData];
     [paddedData increaseLengthBy:12 - passwordData.length];
     
-    [self trace:@"Sending password: %@", paddedData];
+    [self trace:@"Sending password for authentication: %@", paddedData];
     [_currentPeripheral writeValue:paddedData forCharacteristic:_COMMAND_PASSWORD type:CBCharacteristicWriteWithResponse];
 }
 
@@ -932,45 +932,44 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 
 
 // Update Parameter RECLN
-- (void)sendWriteRECLN: (NSString *)value {
-    [self sendParameter:getParameterDataFromString(@"5502RECLN", value)];
-}
-
-// Update Parameter PAUSE_LEVEL
-- (void)sendWritePAUSELEVEL: (NSString *)value {
-    [self sendParameter:getParameterDataFromString(@"5502PAUSELEVEL", value)];
-}
-
-// Update Parameter PAUSE_LEN
-- (void)sendWritePAUSELEN: (NSString *)value{
-    [self sendParameter:getParameterDataFromString(@"5502PAUSELEN", value)];
-}
-
-// Update Parameter ACCELER_SENS
-- (void)sendWriteACCELERSENS:(NSString *)value {
-    [self sendParameter:getParameterDataFromString(@"5502ACCELERSENS", value)];
+- (void)sendWriteRECLN: (Byte)value {
+    Byte bytes[1] = { value };
+    [_currentPeripheral writeValue:[NSData dataWithBytes:bytes length:1] forCharacteristic:_SETTING_AUDIO_LENGTH type:CBCharacteristicWriteWithResponse];
 }
 
 // Update parameter MIC
-- (void)sendWriteMIC:(NSString *)value {
-    [self sendParameter:getParameterDataFromString(@"5502MIC", value)];
+- (void)sendWriteMIC:(Byte)value {
+    Byte bytes[1] = { value };
+    [_currentPeripheral writeValue:[NSData dataWithBytes:bytes length:1] forCharacteristic:_SETTING_MIC_LEVEL type:CBCharacteristicWriteWithResponse];
 }
 
-// Update parameter BTLOC
-- (void)sendWriteBTLOC:(NSString *)value {
-    [self sendParameter:getParameterDataFromString(@"5502BTLOC", value)];
+// Update Parameter PAUSE_LEVEL
+- (void)sendWritePAUSELEVEL: (Byte)value {
+    Byte bytes[1] = { value };
+    [_currentPeripheral writeValue:[NSData dataWithBytes:bytes length:1] forCharacteristic:_SETTING_SILENCE_LEVEL type:CBCharacteristicWriteWithResponse];
+}
+
+// Update Parameter PAUSE_LEN
+- (void)sendWritePAUSELEN: (Byte)value{
+    Byte bytes[1] = { value };
+    [_currentPeripheral writeValue:[NSData dataWithBytes:bytes length:1] forCharacteristic:_SETTING_SILENCE_LENGTH type:CBCharacteristicWriteWithResponse];
+}
+
+// Update Parameter ACCELER_SENS
+- (void)sendWriteACCELERSENS:(Byte)value {
+    Byte bytes[1] = { value };
+    [_currentPeripheral writeValue:[NSData dataWithBytes:bytes length:1] forCharacteristic:_SETTING_ACCELEROMETER_SENSITIVITY type:CBCharacteristicWriteWithResponse];
 }
 
 - (void)sendWritePASSWORD:(NSString *)value {
-    _currentPass = value;
+    NSData *passwordData = [value dataUsingEncoding:NSUTF8StringEncoding];
+    passwordData = (passwordData.length > 11)
+    ? [passwordData subdataWithRange:NSMakeRange(0, 11)]
+    : passwordData;
     
-    unichar passLength = { value.length & 0xff };
-    
-    NSMutableData *data = getParameterDataFromString(@"5502PASS", [NSString stringWithCharacters:&passLength length:1]);
-    
-    [data appendData:[value dataUsingEncoding:NSUTF8StringEncoding]];
-    
-    [self sendParameter:data];
+    NSMutableData *paddedData = [NSMutableData dataWithData:passwordData];
+    [paddedData increaseLengthBy:12 - passwordData.length];
+    [_currentPeripheral writeValue:paddedData forCharacteristic:_SETTING_PASSWORD type:CBCharacteristicWriteWithResponse];
 }
 /************ END UPDATE PARAMETER ****************/
 

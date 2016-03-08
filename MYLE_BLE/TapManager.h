@@ -92,12 +92,11 @@ enum _RECEIVE_MODE {
 // Adds a listener for trace messafes
 - (void)addTraceListener:(TraceListener)listener;
 
-- (void)sendWriteRECLN:(NSString *)value;
-- (void)sendWritePAUSELEVEL:(NSString *)value;
-- (void)sendWritePAUSELEN:(NSString *)value;
-- (void)sendWriteACCELERSENS:(NSString *)value;
-- (void)sendWriteMIC:(NSString *)value;
-- (void)sendWriteBTLOC:(NSString *)value;
+- (void)sendWriteRECLN:(Byte)value;
+- (void)sendWriteMIC:(Byte)value;
+- (void)sendWritePAUSELEVEL:(Byte)value;
+- (void)sendWritePAUSELEN:(Byte)value;
+- (void)sendWriteACCELERSENS:(Byte)value;
 - (void)sendWritePASSWORD:(NSString *)value;
 
 - (void)sendReadRECLN;

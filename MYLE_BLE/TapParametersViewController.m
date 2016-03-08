@@ -92,11 +92,11 @@
 
 
 - (IBAction)writeAll:(id)sender {
-    [_tap sendWriteRECLN:[self formatString:[self.tfRECLN text] numberDigit:2]];
-    [_tap sendWritePAUSELEVEL:[self formatString:[self.tfPAUSE_LEVEL text] numberDigit:3]];
-    [_tap sendWritePAUSELEN:[self formatString:[self.tfPAUSE_LEN text] numberDigit:2]];
-    [_tap sendWriteACCELERSENS:[self formatString:[self.tfACCELER_SENS text] numberDigit:3]];
-    [_tap sendWriteMIC:[self formatString:[self.tfMIC text] numberDigit:3]];
+    [_tap sendWriteRECLN:[self byteFromString:[self.tfRECLN text]]];
+    [_tap sendWriteMIC:[self byteFromString:[self.tfMIC text]]];
+    [_tap sendWritePAUSELEVEL:[self byteFromString:[self.tfPAUSE_LEVEL text]]];
+    [_tap sendWritePAUSELEN:[self byteFromString:[self.tfPAUSE_LEN text]]];
+    [_tap sendWriteACCELERSENS:[self byteFromString:[self.tfACCELER_SENS text]]];
     [_tap sendWritePASSWORD:self.tfPASSWORD.text];
     
     // save password in user defaults
@@ -106,16 +106,8 @@
 }
 
 
-// Format String to match specified number of characters
-- (NSString *)formatString:(NSString *)data numberDigit: (NSUInteger)num {
-    if (data.length == num) { return data; }
-    
-    NSMutableString *ms = [data mutableCopy];
-    for (int i = 0; i < num - data.length; i++) {
-        [ms insertString:@"0" atIndex:0];
-    }
-    
-    return ms;
+- (Byte)byteFromString:(NSString*)str {
+    return str.intValue % 256;
 }
 
 

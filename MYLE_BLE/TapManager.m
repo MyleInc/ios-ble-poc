@@ -24,9 +24,26 @@
     CBPeripheral *_currentPeripheral;
     CBPeripheral *_peripheralTempRef;
     
+    // Settings
+    CBCharacteristic* _SETTING_AUDIO_LENGTH;
+    CBCharacteristic* _SETTING_MIC_LEVEL;
+    CBCharacteristic* _SETTING_SILENCE_LEVEL;
+    CBCharacteristic* _SETTING_SILENCE_LENGTH;
+    CBCharacteristic* _SETTING_ACCELEROMETER_SENSITIVITY;
+    CBCharacteristic* _SETTING_PASSWORD;
+    
+    // Commands
+    CBCharacteristic* _COMMAND_BLUETOOTH_LOCATOR;
+    CBCharacteristic* _COMMAND_PASSWORD;
+    CBCharacteristic* _COMMAND_FACTORY_RESET;
+    CBCharacteristic* _COMMAND_UPDATE_TIME;
+    
+    // Status
+    CBCharacteristic* _STATUS_VERSION;
+    CBCharacteristic* _STATUS_FLAGS;
+    
+    // Battery
     CBCharacteristic* _batteryLevelChrt;
-    CBCharacteristic* _myleReadChrt;
-    CBCharacteristic* _myleWriteChrt;
     
     NSString *_currentUUID;
     NSString *_currentPass;
@@ -187,7 +204,7 @@
     
     [self clearTapList];
     
-    NSArray *servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:MYLE_SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
+    NSArray *servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:MYLE_SERVICE] , nil];
     [_centralManager scanForPeripheralsWithServices:servicesTap options:@{ CBCentralManagerScanOptionAllowDuplicatesKey : @NO }];
     [self trace:@"Scan started"];
 }
@@ -229,21 +246,32 @@
     [self trace:@"Looks like we are in state restoration state, ensure peripheral is initialized..."];
     
     if (peripheral.state == CBPeripheralStateConnected) {
-        // have we disconvered the our services?
-        CBService *myleService = [self getService:MYLE_SERVICE_UUID forPeripheral:peripheral];
+        // have we disconvered our services?
+        CBService *myleService = [self getService:MYLE_SERVICE forPeripheral:peripheral];
         CBService *batteryService = [self getService:BATTERY_SERVICE_UUID forPeripheral:peripheral];
         if (!myleService || !batteryService) {
             // we haven't yet!
-            NSArray *services = @[[CBUUID UUIDWithString:MYLE_SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID]];
+            NSArray *services = @[[CBUUID UUIDWithString:MYLE_SERVICE], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID]];
             [peripheral discoverServices:services];
             return;
         }
         
         // have we discovered MYLE characteristics?
-        _myleReadChrt = [self getCharacteristic:MYLE_READ_CHRT_UUID forService:myleService];
-        _myleWriteChrt = [self getCharacteristic:MYLE_WRITE_CHRT_UUID forService:myleService];
-        if (!_myleReadChrt || !_myleWriteChrt) {
-            [peripheral discoverCharacteristics:@[MYLE_READ_CHRT_UUID, MYLE_WRITE_CHRT_UUID] forService:myleService];
+        _SETTING_AUDIO_LENGTH = [self getCharacteristic:MYLE_CHAR_SETTING_AUDIO_LENGTH forService:myleService];
+        _SETTING_MIC_LEVEL = [self getCharacteristic:MYLE_CHAR_SETTING_MIC_LEVEL forService:myleService];
+        _SETTING_SILENCE_LEVEL = [self getCharacteristic:MYLE_CHAR_SETTING_SILENCE_LEVEL forService:myleService];
+        _SETTING_SILENCE_LENGTH = [self getCharacteristic:MYLE_CHAR_SETTING_SILENCE_LENGTH forService:myleService];
+        _SETTING_ACCELEROMETER_SENSITIVITY = [self getCharacteristic:MYLE_CHAR_SETTING_ACCELEROMETER_SENSITIVITY forService:myleService];
+        _SETTING_PASSWORD = [self getCharacteristic:MYLE_CHAR_SETTING_PASSWORD forService:myleService];
+        _COMMAND_BLUETOOTH_LOCATOR = [self getCharacteristic:MYLE_CHAR_COMMAND_BLUETOOTH_LOCATOR forService:myleService];
+        _COMMAND_PASSWORD = [self getCharacteristic:MYLE_CHAR_COMMAND_PASSWORD forService:myleService];
+        _COMMAND_FACTORY_RESET = [self getCharacteristic:MYLE_CHAR_COMMAND_FACTORY_RESET forService:myleService];
+        _COMMAND_UPDATE_TIME = [self getCharacteristic:MYLE_CHAR_COMMAND_UPDATE_TIME forService:myleService];
+        _STATUS_VERSION = [self getCharacteristic:MYLE_CHAR_STATUS_VERSION forService:myleService];
+        _STATUS_FLAGS = [self getCharacteristic:MYLE_CHAR_STATUS_FLAGS forService:myleService];
+        
+        if (!_SETTING_AUDIO_LENGTH || !_SETTING_MIC_LEVEL || !_SETTING_SILENCE_LEVEL || !_SETTING_SILENCE_LENGTH || !_SETTING_ACCELEROMETER_SENSITIVITY || !_SETTING_PASSWORD || !_COMMAND_BLUETOOTH_LOCATOR || !_COMMAND_PASSWORD || !_COMMAND_FACTORY_RESET || !_COMMAND_UPDATE_TIME || !_STATUS_VERSION || !_STATUS_FLAGS) {
+            [peripheral discoverCharacteristics:@[MYLE_CHAR_SETTING_AUDIO_LENGTH, MYLE_CHAR_SETTING_MIC_LEVEL, MYLE_CHAR_SETTING_SILENCE_LEVEL, MYLE_CHAR_SETTING_SILENCE_LENGTH, MYLE_CHAR_SETTING_ACCELEROMETER_SENSITIVITY,MYLE_CHAR_SETTING_PASSWORD, MYLE_CHAR_COMMAND_BLUETOOTH_LOCATOR, MYLE_CHAR_COMMAND_PASSWORD, MYLE_CHAR_COMMAND_FACTORY_RESET, MYLE_CHAR_COMMAND_UPDATE_TIME, MYLE_CHAR_STATUS_VERSION, MYLE_CHAR_STATUS_FLAGS] forService:myleService];
             return;
         }
         
@@ -255,8 +283,8 @@
         }
         
         // are we subscribed?
-        if (!_myleReadChrt.isNotifying) {
-            [peripheral setNotifyValue:YES forCharacteristic:_myleReadChrt];
+        if (!_STATUS_FLAGS.isNotifying) {
+            [peripheral setNotifyValue:YES forCharacteristic:_STATUS_FLAGS];
         }
         
         if (!_batteryLevelChrt.isNotifying) {
@@ -306,6 +334,7 @@
 
 
 - (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI {
+   // [self trace:@"I'e found a device"];
     // if devices is not in our list - add it and notify subscribers
     if ([_availableTaps containsObject:peripheral]) { return; }
     
@@ -347,7 +376,7 @@
     _currentPeripheral = peripheral;
     peripheral.delegate = self;
     
-    NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:MYLE_SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
+    NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:MYLE_SERVICE], /*[CBUUID UUIDWithString:BATTERY_SERVICE_UUID],*/ nil];
     [peripheral discoverServices:servicesTap];
 }
 
@@ -399,8 +428,18 @@
     _receiveMode = RECEIVE_NONE;
     _isConnected = NO;
     _isAuthenticating = NO;
-    _myleReadChrt = nil;
-    _myleWriteChrt = nil;
+    _SETTING_AUDIO_LENGTH = nil;
+    _SETTING_MIC_LEVEL = nil;
+    _SETTING_SILENCE_LEVEL = nil;
+    _SETTING_SILENCE_LENGTH = nil;
+    _SETTING_ACCELEROMETER_SENSITIVITY = nil;
+    _SETTING_PASSWORD = nil;
+    _COMMAND_BLUETOOTH_LOCATOR = nil;
+    _COMMAND_PASSWORD = nil;
+    _COMMAND_FACTORY_RESET = nil;
+    _COMMAND_UPDATE_TIME = nil;
+    _STATUS_VERSION = nil;
+    _STATUS_FLAGS = nil;
     _batteryLevelChrt = nil;
 }
 
@@ -429,9 +468,19 @@
     
     // List 2 characteristics
     NSArray * characteristics = [NSArray arrayWithObjects:
-                                 [CBUUID UUIDWithString:MYLE_READ_CHRT_UUID],
-                                 [CBUUID UUIDWithString:MYLE_WRITE_CHRT_UUID],
-                                 [CBUUID UUIDWithString:BATTERY_LEVEL_UUID], nil];
+                                 [CBUUID UUIDWithString:MYLE_CHAR_SETTING_AUDIO_LENGTH],
+                                 [CBUUID UUIDWithString:MYLE_CHAR_SETTING_MIC_LEVEL],
+                                 [CBUUID UUIDWithString:MYLE_CHAR_SETTING_SILENCE_LEVEL],
+                                 [CBUUID UUIDWithString:MYLE_CHAR_SETTING_SILENCE_LENGTH],
+                                 [CBUUID UUIDWithString:MYLE_CHAR_SETTING_ACCELEROMETER_SENSITIVITY],
+                                 [CBUUID UUIDWithString:MYLE_CHAR_SETTING_PASSWORD],
+                                 [CBUUID UUIDWithString:MYLE_CHAR_COMMAND_BLUETOOTH_LOCATOR],
+                                 [CBUUID UUIDWithString:MYLE_CHAR_COMMAND_PASSWORD],
+                                 [CBUUID UUIDWithString:MYLE_CHAR_COMMAND_FACTORY_RESET],
+                                 [CBUUID UUIDWithString:MYLE_CHAR_COMMAND_UPDATE_TIME],
+                                 [CBUUID UUIDWithString:MYLE_CHAR_STATUS_VERSION],
+                                 [CBUUID UUIDWithString:MYLE_CHAR_STATUS_FLAGS]/*,
+                                 [CBUUID UUIDWithString:BATTERY_LEVEL_UUID]*/, nil];
     for (CBService *service in peripheral.services) {
         [peripheral discoverCharacteristics:characteristics forService:service];
     }
@@ -452,11 +501,21 @@
         if (_batteryLevelChrt) {
             [peripheral setNotifyValue:YES forCharacteristic:_batteryLevelChrt];
         }
-    } else if ([[service UUID] isEqual:[CBUUID UUIDWithString:MYLE_SERVICE_UUID]]) {
-        _myleWriteChrt = [self getCharacteristic:MYLE_WRITE_CHRT_UUID forService:service];
-        _myleReadChrt = [self getCharacteristic:MYLE_READ_CHRT_UUID forService:service];
-        if (_myleReadChrt) {
-            [peripheral setNotifyValue:YES forCharacteristic:_myleReadChrt];
+    } else if ([[service UUID] isEqual:[CBUUID UUIDWithString:MYLE_SERVICE]]) {
+        _SETTING_AUDIO_LENGTH = [self getCharacteristic:MYLE_CHAR_SETTING_AUDIO_LENGTH forService:service];
+        _SETTING_MIC_LEVEL = [self getCharacteristic:MYLE_CHAR_SETTING_MIC_LEVEL forService:service];
+        _SETTING_SILENCE_LEVEL = [self getCharacteristic:MYLE_CHAR_SETTING_SILENCE_LEVEL forService:service];
+        _SETTING_SILENCE_LENGTH = [self getCharacteristic:MYLE_CHAR_SETTING_SILENCE_LENGTH forService:service];
+        _SETTING_ACCELEROMETER_SENSITIVITY = [self getCharacteristic:MYLE_CHAR_SETTING_ACCELEROMETER_SENSITIVITY forService:service];
+        _SETTING_PASSWORD = [self getCharacteristic:MYLE_CHAR_SETTING_PASSWORD forService:service];
+        _COMMAND_BLUETOOTH_LOCATOR = [self getCharacteristic:MYLE_CHAR_COMMAND_BLUETOOTH_LOCATOR forService:service];
+        _COMMAND_PASSWORD = [self getCharacteristic:MYLE_CHAR_COMMAND_PASSWORD forService:service];
+        _COMMAND_FACTORY_RESET = [self getCharacteristic:MYLE_CHAR_COMMAND_FACTORY_RESET forService:service];
+        _COMMAND_UPDATE_TIME = [self getCharacteristic:MYLE_CHAR_COMMAND_UPDATE_TIME forService:service];
+        _STATUS_VERSION = [self getCharacteristic:MYLE_CHAR_STATUS_VERSION forService:service];
+        _STATUS_FLAGS = [self getCharacteristic:MYLE_CHAR_STATUS_FLAGS forService:service];
+        if (_STATUS_FLAGS) {
+            [peripheral setNotifyValue:YES forCharacteristic:_STATUS_FLAGS];
         }
     }
 }
@@ -476,38 +535,107 @@
 {
     if (error) {
         return [self trace:@"Error updating value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
-    } else {
-        [self trace:@"[>] Received in charc %@:\r\n%@", (characteristic.UUID.UUIDString.length >= 8) ? [characteristic.UUID.UUIDString substringToIndex:8] :characteristic.UUID.UUIDString, characteristic.value];
     }
     
-    // Readback of the battery level
-    if (characteristic == _batteryLevelChrt) {
-        [self readBatteryLevel:characteristic.value];
+    [self trace:@"[>] Received in charc %@:\r\n%@", (characteristic.UUID.UUIDString.length >= 8) ? [characteristic.UUID.UUIDString substringToIndex:8] : characteristic.UUID.UUIDString, characteristic.value];
+    
+    Byte *bytes = (Byte*)(characteristic.value.bytes);
+
+    if (characteristic == _STATUS_FLAGS) {
+        // if we are in the middle of authentication, and received password status flag set to 1, then we are authenticated
+        if (_isAuthenticating) {
+            if (((Byte*)characteristic.value.bytes)[0] & 0x01) {
+                [self trace:@"Password is OK!"];
+                
+                _isAuthenticating = NO;
+                _isConnected = YES;
+                
+                // notify subscribers about connected peripheral
+                [self trace:@"Broadcasting about connected tap"];
+                [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
+                                                                    object:nil
+                                                                  userInfo:@{ kTapNtfnType: @kTapNtfnTypeConnected }];
+                
+                [self trace:@"Sending current time"];
+                [self sendCurrentTime];
+            }
+        } else if (bytes[0] & 0x02) {
+            [self trace:@"There is a record on device! Nothing to do yet"];
+        }
     }
     
-    // Not correct characteristics
-    if (characteristic != _myleReadChrt) {
-        return;
+    
+    if (characteristic == _batteryLevelChrt)
+    {
+        [self trace:@"Battery level received: %d", bytes[0]];
+        [self notifyReadParameterListeners:@"BATTERY_LEVEL" intValue:bytes[0] strValue:nil];
+    }
+    else if (characteristic == _SETTING_AUDIO_LENGTH)
+    {
+        [self notifyReadParameterListeners:@"RECLN" intValue:bytes[0] strValue:nil];
+    }
+    else if (characteristic == _SETTING_MIC_LEVEL)
+    {
+        [self notifyReadParameterListeners:@"MIC" intValue:bytes[0] strValue:nil];
+    }
+    else if (characteristic == _SETTING_SILENCE_LEVEL)
+    {
+        [self notifyReadParameterListeners:@"PAUSELEVEL" intValue:bytes[0] strValue:nil];
+    }
+    else if (characteristic == _SETTING_SILENCE_LENGTH)
+    {
+        [self notifyReadParameterListeners:@"PAUSELEN" intValue:bytes[0] strValue:nil];
+    }
+    else if (characteristic == _SETTING_ACCELEROMETER_SENSITIVITY)
+    {
+        [self notifyReadParameterListeners:@"ACCELERSENS" intValue:bytes[0] strValue:nil];
+    }
+    else if (characteristic == _SETTING_PASSWORD)
+    {
+        [self notifyReadParameterListeners:@"PASSWORD" intValue:0 strValue:[[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding]];
+    }
+    else if (characteristic == _STATUS_VERSION)
+    {
+        [self notifyReadParameterListeners:@"VERSION" intValue:0 strValue:[NSString stringWithFormat:@"%d.%d.%d", bytes[0], bytes[1], bytes[2]]];
     }
     
-    /*********** RECEIVE PARAMETER VALUE ***************/
-    if (!_isReceivingAudioFile && !_isReceivingLogFile) {
-        if([self readParameter:characteristic.value]) { return; }
-    }
+
+
     
-    /*********** RECEIVE AUDIO FILE OR LOG FILE ********************/
-    
-    if (_receiveMode == RECEIVE_AUDIO_FILE) {
-        [self handleRecieveAudioFile: characteristic.value
-                      withPeripheral: peripheral
-                    withChararistics: characteristic];
-        
-    } else if (_receiveMode == RECEIVE_LOG_FILE) {
-        // Send back to peripheral number of bytes received.
-        [self handleRecieveLogFile: characteristic.value
-                    withPeripheral: peripheral
-                  withChararistics: characteristic];
-    }
+//    if (error) {
+//        return [self trace:@"Error updating value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
+//    } else {
+//        [self trace:@"[>] Received in charc %@:\r\n%@", (characteristic.UUID.UUIDString.length >= 8) ? [characteristic.UUID.UUIDString substringToIndex:8] :characteristic.UUID.UUIDString, characteristic.value];
+//    }
+//    
+//    // Readback of the battery level
+//    if (characteristic == _batteryLevelChrt) {
+//        [self readBatteryLevel:characteristic.value];
+//    }
+//    
+//    // Not correct characteristics
+//    if (characteristic != _myleReadChrt) {
+//        return;
+//    }
+//    
+//    /*********** RECEIVE PARAMETER VALUE ***************/
+//    if (!_isReceivingAudioFile && !_isReceivingLogFile) {
+//        if([self readParameter:characteristic.value]) { return; }
+//    }
+//    
+//    /*********** RECEIVE AUDIO FILE OR LOG FILE ********************/
+//    
+//    if (_receiveMode == RECEIVE_AUDIO_FILE) {
+//        [self handleRecieveAudioFile: characteristic.value
+//                      withPeripheral: peripheral
+//                    withChararistics: characteristic];
+//        
+//    } else if (_receiveMode == RECEIVE_LOG_FILE) {
+//        // Send back to peripheral number of bytes received.
+//        [self handleRecieveLogFile: characteristic.value
+//                    withPeripheral: peripheral
+//                  withChararistics: characteristic];
+//    }
 }
 
 
@@ -522,7 +650,7 @@
     
     [self trace:@"Changed notification state to %@ on characteristic %@", characteristic.isNotifying ? @"NOTIFYING" : @"NOT NOTIFYING", characteristic.UUID.UUIDString];
     
-    if (characteristic == _myleReadChrt && characteristic.isNotifying) {
+    if (characteristic == _STATUS_FLAGS && characteristic.isNotifying) {
         // Send password to board
         _isAuthenticating = YES;
     
@@ -553,208 +681,101 @@
     return value;
 }
 
-- (Boolean) readBatteryLevel:(NSData *)data {
-    Byte byteData[1] = { 0 };
-    [data getBytes:byteData range:NSMakeRange(0, 1)];
-    
-    [self trace:@"Battery level received: %d", byteData[0]];
-    [self notifyReadParameterListeners:@"BATTERY_LEVEL" intValue:byteData[0] strValue:nil];
-    return true;
-}
-
-
-// Filter received data from device
-- (Boolean) readParameter:(NSData *)data {
-    Boolean ret = false;
-    
-    NSString* string = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    
-    // Audio header
-    if (string == nil) return false;
-    
-    Byte byteData[3] = { 0 };
-    
-    if (!([string rangeOfString:@"5503RECLN"].location == NSNotFound))
-    {
-        [data getBytes:byteData range:NSMakeRange(@"5503RECLN".length, data.length-@"5503RECLN".length)];
-        ret = true;
-        [self notifyReadParameterListeners:@"RECLN" intValue:[self getFromBytes:byteData] strValue:nil];
-    }
-    else if (!([string rangeOfString:@"5503PAUSELEVEL"].location == NSNotFound))
-    {
-        [data getBytes:byteData range:NSMakeRange(@"5503PAUSELEVEL".length, data.length-@"5503PAUSELEVEL".length)];
-        ret = true;
-        [self notifyReadParameterListeners:@"PAUSELEVEL" intValue:[self getFromBytes:byteData] strValue:nil];
-    }
-    else if (!([string rangeOfString:@"5503PAUSELEN"].location == NSNotFound))
-    {
-        [data getBytes:byteData range:NSMakeRange(@"5503PAUSELEN".length, data.length-@"5503PAUSELEN".length)];
-        ret = true;
-        [self notifyReadParameterListeners:@"PAUSELEN" intValue:[self getFromBytes:byteData] strValue:nil];
-    }
-    else if (!([string rangeOfString:@"5503ACCELERSENS"].location == NSNotFound))
-    {
-        [data getBytes:byteData range:NSMakeRange(@"5503ACCELERSENS".length, data.length-@"5503ACCELERSENS".length)];
-        ret = true;
-        [self notifyReadParameterListeners:@"ACCELERSENS" intValue:[self getFromBytes:byteData] strValue:nil];
-    }
-    else if (!([string rangeOfString:@"5503BTLOC"].location == NSNotFound))
-    {
-        [data getBytes:byteData range:NSMakeRange(@"5503BTLOC".length, data.length-@"5503BTLOC".length)];
-        ret = true;
-        [self notifyReadParameterListeners:@"BTLOC" intValue:[self getFromBytes:byteData] strValue:nil];
-    }
-    else if (!([string rangeOfString:@"5503MIC"].location == NSNotFound))
-    {
-        [data getBytes:byteData range:NSMakeRange(@"5503MIC".length, data.length-@"5503MIC".length)];
-        ret = true;
-        [self notifyReadParameterListeners:@"MIC" intValue:[self getFromBytes:byteData] strValue:nil];
-    }
-    else if (!([string rangeOfString:@"5503VERSION"].location == NSNotFound))
-    {
-        Byte versionData[20] = { 0 };
-        
-        [data getBytes:versionData range:NSMakeRange(@"5503VERSION".length + 1, data.length - @"5503VERSION".length - 1)];
-        ret = true;
-        NSString *version = [NSString stringWithUTF8String:(const char *)versionData];
-        [self trace:@"Device version received: %@", version];
-        [self notifyReadParameterListeners:@"VERSION" intValue:0 strValue:version];
-    }
-    else if (!([string rangeOfString:@"CONNECTED"].location == NSNotFound))
-    {
-        _isAuthenticating = NO;
-        _isConnected = YES;
-        ret = true;
-        
-        // notify subscribers about connected peripheral
-        [self trace:@"Broadcasting about connected tap"];
-        [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
-                                                            object:nil
-                                                          userInfo:@{ kTapNtfnType: @kTapNtfnTypeConnected }];
-        
-        [self trace:@"Sending current time"];
-        [self sendCurrentTime];
-        [self sendReadMAC];
-        
-        return ret;
-    } else if (!([string rangeOfString:@"5504"].location == NSNotFound)) {
-        Byte buf[1] = { 0 };
-        
-        [data getBytes:buf range:NSMakeRange(4, 1)];
-        
-        if (buf[0] == '0') {
-            _receiveMode = RECEIVE_AUDIO_FILE;
-        } else if (buf[0] == '1') {
-            _receiveMode = RECEIVE_LOG_FILE;
-        }
-        
-        ret = true;
-    } else if (!([string rangeOfString:@"5503UUID"].location == NSNotFound)) {
-        Byte mac[20] = { 0 };
-        [data getBytes:mac range:NSMakeRange(@"5503UUID".length, data.length - @"5503UUID".length)];
-        ret = true;
-        _currentMAC = [NSString stringWithFormat:@"%c%c:%c%c:%c%c:%c%c:%c%c:%c%c", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], mac[6], mac[7], mac[8], mac[9], mac[10], mac[11]];
-        [self notifyReadParameterListeners:@"MAC" intValue:0 strValue:_currentMAC];
-        
-    }
-    return ret;
-}
-
 
 - (void)handleRecieveAudioFile: (NSData*)data
                 withPeripheral: (CBPeripheral*)peripheral
               withChararistics: (CBCharacteristic*)characteristic {
     
-    static CFTimeInterval startTime = 0;
-    
-    if (_audioLength == 0) // First packet
-    {
-        unsigned int ml;
-        
-        [characteristic.value getBytes:&ml length:4];
-        [self trace:[NSString stringWithFormat:@"Read record metadata: metadata length = %d", ml]];
-        
-        [characteristic.value getBytes:&_audioLength range:NSMakeRange(4, 4)];
-        [self trace:[NSString stringWithFormat:@"Read record metadata: audio length = %d", _audioLength]];
-        
-        [characteristic.value getBytes:&_audioRecordedTime range:NSMakeRange(8, 4)];
-        
-        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-        [formatter setDateFormat:TimeFormat];
-        [self trace:[NSString stringWithFormat:@"Read record metadata: record time = %@", [formatter stringFromDate:[self getDateFromInt:_audioRecordedTime]]]];
-        
-        [self trace:@"Receiving audio data..."];
-        
-        _audioBuffer = [[NSMutableData alloc] init];
-        _isReceivingAudioFile = true;
-        _progress = 0;
-        
-        NSInteger numBytes = CREDITBLE;
-        Byte byteData[2] = { numBytes & 0xff, numBytes >> 8 };
-        NSData *data2 = [NSData dataWithBytes:byteData length:2];
-        
-        [self writeValue:data2 forCharc:_myleWriteChrt];
-        
-        startTime = CACurrentMediaTime();
-        
-    }
-    else if (_audioBuffer.length < _audioLength)
-    {
-        static NSInteger numBytesTransfered = 0;
-        
-        [_audioBuffer appendData:characteristic.value];
-        
-        float currentProgress = (float)_audioBuffer.length / (float)_audioLength;
-        if (fabsf(currentProgress - _progress) >= PROGRESS_LOG_DELTA || _audioBuffer.length == _audioLength) {
-            _progress = currentProgress;
-            [self trace:@"Received %d%%", (int)(_progress * 100.0f)];
-        }
-        
-        if (_audioBuffer.length >= _audioLength)
-        {
-            CFTimeInterval elapsedTime = CACurrentMediaTime() - startTime;
-            
-            NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-            [formatter setDateFormat:RecordFileFormat];
-            NSString *fileName = [NSString stringWithFormat:@"%@.wav", [formatter stringFromDate:[self getDateFromInt:_audioRecordedTime]]];
-            NSString *filePath = [DocumentsPath() stringByAppendingPathComponent:fileName];
-            
-            [_audioBuffer writeToFile:filePath atomically:YES];
-            
-            [self trace:[NSString stringWithFormat:@"Audio saved to %@", fileName]];
-            [self trace:[NSString stringWithFormat:@"Transfer speed %d B/s", (int)(_audioLength/elapsedTime)]];
-            
-            // reset
-            _audioLength = 0;
-            _progress = 0;
-            _isReceivingAudioFile = false;
-            _receiveMode = RECEIVE_NONE;
-            
-            // notify subscribers about new file appearence
-            [self trace:@"Broadcasting about received file"];
-            [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
-                                                                object:nil
-                                                              userInfo:@{ kTapNtfnType: @kTapNtfnTypeFile, kTapNtfnFilePath: filePath, kTapNtfnMAC: _currentMAC }];
-        }
-        else{
-            
-            numBytesTransfered += characteristic.value.length;
-            
-            NSInteger numBytes = CREDITBLE;
-            if(_audioLength - _audioBuffer.length < CREDITBLE)
-            {
-                numBytes = _audioLength - _audioBuffer.length;
-            }
-            
-            if(numBytesTransfered >= numBytes)
-            {
-                numBytesTransfered = 0;
-                Byte byteData[2] = { numBytes & 0xff, numBytes >> 8 };
-                NSData *data2 = [NSData dataWithBytes:byteData length:2];
-                [self writeValue:data2 forCharc:_myleWriteChrt];
-            }
-        }
-    }
+//    static CFTimeInterval startTime = 0;
+//    
+//    if (_audioLength == 0) // First packet
+//    {
+//        unsigned int ml;
+//        
+//        [characteristic.value getBytes:&ml length:4];
+//        [self trace:[NSString stringWithFormat:@"Read record metadata: metadata length = %d", ml]];
+//        
+//        [characteristic.value getBytes:&_audioLength range:NSMakeRange(4, 4)];
+//        [self trace:[NSString stringWithFormat:@"Read record metadata: audio length = %d", _audioLength]];
+//        
+//        [characteristic.value getBytes:&_audioRecordedTime range:NSMakeRange(8, 4)];
+//        
+//        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+//        [formatter setDateFormat:TimeFormat];
+//        [self trace:[NSString stringWithFormat:@"Read record metadata: record time = %@", [formatter stringFromDate:[self getDateFromInt:_audioRecordedTime]]]];
+//        
+//        [self trace:@"Receiving audio data..."];
+//        
+//        _audioBuffer = [[NSMutableData alloc] init];
+//        _isReceivingAudioFile = true;
+//        _progress = 0;
+//        
+//        NSInteger numBytes = CREDITBLE;
+//        Byte byteData[2] = { numBytes & 0xff, numBytes >> 8 };
+//        NSData *data2 = [NSData dataWithBytes:byteData length:2];
+//        
+//        [self writeValue:data2 forCharc:_myleWriteChrt];
+//        
+//        startTime = CACurrentMediaTime();
+//        
+//    }
+//    else if (_audioBuffer.length < _audioLength)
+//    {
+//        static NSInteger numBytesTransfered = 0;
+//        
+//        [_audioBuffer appendData:characteristic.value];
+//        
+//        float currentProgress = (float)_audioBuffer.length / (float)_audioLength;
+//        if (fabsf(currentProgress - _progress) >= PROGRESS_LOG_DELTA || _audioBuffer.length == _audioLength) {
+//            _progress = currentProgress;
+//            [self trace:@"Received %d%%", (int)(_progress * 100.0f)];
+//        }
+//        
+//        if (_audioBuffer.length >= _audioLength)
+//        {
+//            CFTimeInterval elapsedTime = CACurrentMediaTime() - startTime;
+//            
+//            NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+//            [formatter setDateFormat:RecordFileFormat];
+//            NSString *fileName = [NSString stringWithFormat:@"%@.wav", [formatter stringFromDate:[self getDateFromInt:_audioRecordedTime]]];
+//            NSString *filePath = [DocumentsPath() stringByAppendingPathComponent:fileName];
+//            
+//            [_audioBuffer writeToFile:filePath atomically:YES];
+//            
+//            [self trace:[NSString stringWithFormat:@"Audio saved to %@", fileName]];
+//            [self trace:[NSString stringWithFormat:@"Transfer speed %d B/s", (int)(_audioLength/elapsedTime)]];
+//            
+//            // reset
+//            _audioLength = 0;
+//            _progress = 0;
+//            _isReceivingAudioFile = false;
+//            _receiveMode = RECEIVE_NONE;
+//            
+//            // notify subscribers about new file appearence
+//            [self trace:@"Broadcasting about received file"];
+//            [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
+//                                                                object:nil
+//                                                              userInfo:@{ kTapNtfnType: @kTapNtfnTypeFile, kTapNtfnFilePath: filePath, kTapNtfnMAC: _currentMAC }];
+//        }
+//        else{
+//            
+//            numBytesTransfered += characteristic.value.length;
+//            
+//            NSInteger numBytes = CREDITBLE;
+//            if(_audioLength - _audioBuffer.length < CREDITBLE)
+//            {
+//                numBytes = _audioLength - _audioBuffer.length;
+//            }
+//            
+//            if(numBytesTransfered >= numBytes)
+//            {
+//                numBytesTransfered = 0;
+//                Byte byteData[2] = { numBytes & 0xff, numBytes >> 8 };
+//                NSData *data2 = [NSData dataWithBytes:byteData length:2];
+//                [self writeValue:data2 forCharc:_myleWriteChrt];
+//            }
+//        }
+//    }
 }
 
 
@@ -762,102 +783,100 @@
               withPeripheral: (CBPeripheral*)peripheral
             withChararistics: (CBCharacteristic*)characteristic {
     
-    static NSInteger numBytesTransfered = 0;
-    static unsigned int fileLength = 0;
-    
-    // perform some action
-    if (_logLength == 0) // First packet
-    {
-        unsigned int ml;
-        
-        [data getBytes:&ml length:4];
-        [self trace:[NSString stringWithFormat:@"Log metadata: metadata length = %d", ml]];
-        
-        [data getBytes:&_logLength range:NSMakeRange(4, 4)];
-        [self trace:[NSString stringWithFormat:@"Log metadata: log length = %d", _logLength]];
-        
-        [data getBytes:&_logCreatedTime range:NSMakeRange(8, 4)];
-        
-        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-        [formatter setDateFormat:TimeFormat];
-        [self trace:[NSString stringWithFormat:@"Log metadata: created time = %@", [formatter stringFromDate:[self getDateFromInt:_logCreatedTime]]]];
-        
-        [self trace:@"Receiving log data ..."];
-        
-        _logBuffer = [[NSMutableData alloc] init];
-        _isReceivingLogFile = true;
-        NSInteger numBytes = 235;
-        NSData *data = [self IntToNSData:numBytes];
-        [self writeValue:data forCharc:_myleWriteChrt];
-    }
-    else if (_logBuffer.length < _logLength)
-    {
-        [_logBuffer appendData:data];
-        
-        if (_logBuffer.length >= _logLength)
-        {
-            NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-            [formatter setDateFormat:RecordFileFormat];
-            NSString *fileName = [NSString stringWithFormat:@"%@.log", [formatter stringFromDate:[self getDateFromInt:_logCreatedTime]]];
-            
-            NSString *filePath = [DocumentsPath() stringByAppendingPathComponent:fileName];
-            [_logBuffer writeToFile:filePath atomically:YES];
-            
-            [self trace:[NSString stringWithFormat:@"Log saved to %@", fileName]];
-            
-            // Reset
-            _logLength = 0;
-            _isReceivingLogFile = false;
-            _receiveMode = RECEIVE_NONE;
-        }
-        else{
-            
-            numBytesTransfered += characteristic.value.length;
-            fileLength += numBytesTransfered;
-            
-            NSInteger numBytes = 235;
-            if(_logLength - _logBuffer.length < 235)
-            {
-                numBytes = _logLength - _logBuffer.length;
-            }
-            
-            if(numBytesTransfered >= numBytes)
-            {
-                numBytesTransfered = 0;
-                NSData *data = [self IntToNSData:numBytes];
-                [self writeValue:data forCharc:_myleWriteChrt];
-            }
-        }
-    }
+//    static NSInteger numBytesTransfered = 0;
+//    static unsigned int fileLength = 0;
+//    
+//    // perform some action
+//    if (_logLength == 0) // First packet
+//    {
+//        unsigned int ml;
+//        
+//        [data getBytes:&ml length:4];
+//        [self trace:[NSString stringWithFormat:@"Log metadata: metadata length = %d", ml]];
+//        
+//        [data getBytes:&_logLength range:NSMakeRange(4, 4)];
+//        [self trace:[NSString stringWithFormat:@"Log metadata: log length = %d", _logLength]];
+//        
+//        [data getBytes:&_logCreatedTime range:NSMakeRange(8, 4)];
+//        
+//        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+//        [formatter setDateFormat:TimeFormat];
+//        [self trace:[NSString stringWithFormat:@"Log metadata: created time = %@", [formatter stringFromDate:[self getDateFromInt:_logCreatedTime]]]];
+//        
+//        [self trace:@"Receiving log data ..."];
+//        
+//        _logBuffer = [[NSMutableData alloc] init];
+//        _isReceivingLogFile = true;
+//        NSInteger numBytes = 235;
+//        NSData *data = [self IntToNSData:numBytes];
+//        [self writeValue:data forCharc:_myleWriteChrt];
+//    }
+//    else if (_logBuffer.length < _logLength)
+//    {
+//        [_logBuffer appendData:data];
+//        
+//        if (_logBuffer.length >= _logLength)
+//        {
+//            NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+//            [formatter setDateFormat:RecordFileFormat];
+//            NSString *fileName = [NSString stringWithFormat:@"%@.log", [formatter stringFromDate:[self getDateFromInt:_logCreatedTime]]];
+//            
+//            NSString *filePath = [DocumentsPath() stringByAppendingPathComponent:fileName];
+//            [_logBuffer writeToFile:filePath atomically:YES];
+//            
+//            [self trace:[NSString stringWithFormat:@"Log saved to %@", fileName]];
+//            
+//            // Reset
+//            _logLength = 0;
+//            _isReceivingLogFile = false;
+//            _receiveMode = RECEIVE_NONE;
+//        }
+//        else{
+//            
+//            numBytesTransfered += characteristic.value.length;
+//            fileLength += numBytesTransfered;
+//            
+//            NSInteger numBytes = 235;
+//            if(_logLength - _logBuffer.length < 235)
+//            {
+//                numBytes = _logLength - _logBuffer.length;
+//            }
+//            
+//            if(numBytesTransfered >= numBytes)
+//            {
+//                numBytesTransfered = 0;
+//                NSData *data = [self IntToNSData:numBytes];
+//                [self writeValue:data forCharc:_myleWriteChrt];
+//            }
+//        }
+//    }
 }
 
 
 - (void) writeValue:(NSData *)value forCharc:(CBCharacteristic*)charc
 {
     [self trace:@"[<] Sent to charc %@:\r\n%@", (charc.UUID.UUIDString.length >= 8) ? [charc.UUID.UUIDString substringToIndex:8] : charc.UUID.UUIDString, value];
-    [_currentPeripheral writeValue:value forCharacteristic:charc type:CBCharacteristicWriteWithoutResponse];
+    [_currentPeripheral writeValue:value forCharacteristic:charc type:CBCharacteristicWriteWithResponse];
 }
 
 
 - (void) sendParameter: (NSData *) data
 {
-    [self writeValue:data forCharc:_myleWriteChrt];
+    //[self writeValue:data forCharc:_myleWriteChrt];
 }
 
 
 - (void)sendPassword:(NSString*)password {
-    NSData *data;
-    NSData *passData = [password dataUsingEncoding:NSUTF8StringEncoding];
+    NSData *passwordData = [password dataUsingEncoding:NSUTF8StringEncoding];
+    passwordData = (passwordData.length > 12)
+        ? [passwordData subdataWithRange:NSMakeRange(0, 12)]
+        : passwordData;
     
-    Byte byteData[5] = { '5', '5', '0', '1', password.length & 0xff };
+    NSMutableData *paddedData = [NSMutableData dataWithData:passwordData];
+    [paddedData increaseLengthBy:12 - passwordData.length];
     
-    data = [NSData dataWithBytes:byteData length:5];
-    
-    NSMutableData *concatenatedData = [[NSMutableData alloc] init];
-    [concatenatedData appendData:data];
-    [concatenatedData appendData:passData];
-    
-    [self sendParameter:concatenatedData];
+    [self trace:@"Sent password: %@", paddedData];
+    [_currentPeripheral writeValue:paddedData forCharacteristic:_COMMAND_PASSWORD type:CBCharacteristicWriteWithResponse];
 }
 
 
@@ -866,21 +885,19 @@
     NSCalendar *calendar = [NSCalendar currentCalendar];
     calendar.timeZone = [NSTimeZone timeZoneWithName:@"UTC"];
     NSDateComponents *components = [calendar components:(NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond | NSCalendarUnitDay | NSCalendarUnitMonth | NSCalendarUnitYear) fromDate:[NSDate date]];
-    NSInteger hour, minute, second, day, month, year;
     
-    hour = [components hour];
-    minute = [components minute];
-    second = [components second];
-    day = [components day];
-    month = [components month];
-    year = [components year];
+    NSInteger hour = [components hour];
+    NSInteger minute = [components minute];
+    NSInteger second = [components second];
+    NSInteger day = [components day];
+    NSInteger month = [components month];
+    NSInteger year = [components year];
     
-    NSData *data = [[NSData alloc] init];
-    Byte byteData[10] = { '5', '5', '0', '0', second & 0xff, minute & 0xff, hour & 0xff, day & 0xff, month & 0xff, (year - 2000) & 0xff };
+    Byte byteData[6] = { second & 0xff, minute & 0xff, hour & 0xff, day & 0xff, month & 0xff, (year - 2000) & 0xff };
+    NSData *data = [NSData dataWithBytes:byteData length:6];
     
-    data = [NSData dataWithBytes:byteData length:10];
-    
-    [self sendParameter:data];
+    [self trace:@"Sent current time: %@", data];
+    [_currentPeripheral writeValue:data forCharacteristic:_COMMAND_UPDATE_TIME type:CBCharacteristicWriteWithResponse];
 }
 
 
@@ -943,35 +960,31 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 /************ READ PARAMETER ****************/
 
 - (void)sendReadRECLN {
-    [self sendParameter:getParameterDataFromString(@"5503RECLN", @"")];
-}
-
-- (void)sendReadBTLOC {
-    [self sendParameter:getParameterDataFromString(@"5503BTLOC", @"")];
-}
-
-- (void)sendReadMAC {
-    [self sendParameter:getParameterDataFromString(@"5503UUID", @"")];
-}
-
-- (void)sendReadPAUSELEVEL {
-    [self sendParameter:getParameterDataFromString(@"5503PAUSELEVEL", @"")];
-}
-
-- (void)sendReadPAUSELEN {
-    [self sendParameter:getParameterDataFromString(@"5503PAUSELEN", @"")];
-}
-
-- (void)sendReadACCELERSENS {
-    [self sendParameter:getParameterDataFromString(@"5503ACCELERSENS", @"")];
+    [_currentPeripheral readValueForCharacteristic:_SETTING_AUDIO_LENGTH];
 }
 
 - (void)sendReadMIC {
-    [self sendParameter:getParameterDataFromString(@"5503MIC", @"")];
+    [_currentPeripheral readValueForCharacteristic:_SETTING_MIC_LEVEL];
+}
+
+- (void)sendReadPAUSELEVEL {
+    [_currentPeripheral readValueForCharacteristic:_SETTING_SILENCE_LEVEL];
+}
+
+- (void)sendReadPAUSELEN {
+    [_currentPeripheral readValueForCharacteristic:_SETTING_SILENCE_LENGTH];
+}
+
+- (void)sendReadACCELERSENS {
+    [_currentPeripheral readValueForCharacteristic:_SETTING_ACCELEROMETER_SENSITIVITY];
+}
+
+- (void)sendReadPASSWORD {
+    [_currentPeripheral readValueForCharacteristic:_SETTING_PASSWORD];
 }
 
 - (void)sendReadVERSION {
-    [self sendParameter:getParameterDataFromString(@"5503VERSION", @"")];
+    [_currentPeripheral readValueForCharacteristic:_STATUS_VERSION];
 }
 
 - (void)sendReadBATTERY_LEVEL {

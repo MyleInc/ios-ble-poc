@@ -95,12 +95,11 @@ enum _RECEIVE_MODE {
 - (void)sendWritePASSWORD:(NSString *)value;
 
 - (void)sendReadRECLN;
-- (void)sendReadBTLOC;
-- (void)sendReadMAC;
+- (void)sendReadMIC;
 - (void)sendReadPAUSELEVEL;
 - (void)sendReadPAUSELEN;
 - (void)sendReadACCELERSENS;
-- (void)sendReadMIC;
+- (void)sendReadPASSWORD;
 - (void)sendReadVERSION;
 - (void)sendReadBATTERY_LEVEL;
 

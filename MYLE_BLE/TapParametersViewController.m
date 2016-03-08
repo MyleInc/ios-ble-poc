@@ -57,17 +57,16 @@
     self.tvUUID.text = [_tap getCurrentTapUUID];
     
     [_tap sendReadRECLN];
+    [_tap sendReadMIC];
     [_tap sendReadPAUSELEVEL];
     [_tap sendReadPAUSELEN];
     [_tap sendReadACCELERSENS];
-    [_tap sendReadMIC];
-    [_tap sendReadBTLOC];
-    [_tap sendReadMAC];
+    [_tap sendReadPASSWORD];
     [_tap sendReadVERSION];
     [_tap sendReadBATTERY_LEVEL];
     
     // get current password
-    self.tfPASSWORD.text = [_tap getCurrentTapPassword];
+    //self.tfPASSWORD.text = [_tap getCurrentTapPassword];
 }
 
 
@@ -82,12 +81,10 @@
         self.tfACCELER_SENS.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
     } else if ([par isEqual: @"MIC"]) {
         self.tfMIC.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
-    } else if ([par isEqual: @"BTLOC"]) {
-        self.tfBTLOC.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
+    } else if ([par isEqual: @"PASSWORD"]) {
+        self.tfPASSWORD.text = strValue;
     } else if ([par isEqual: @"VERSION"]) {
         self.tfVERSION.text = strValue;
-    } else if ([par isEqual: @"MAC"]) {
-        self.tvUUID.text = strValue;
     } else if ([par isEqual: @"BATTERY_LEVEL"]) {
         self.tfBATTERY_LEVEL.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
     }

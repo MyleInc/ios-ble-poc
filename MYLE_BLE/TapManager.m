@@ -393,12 +393,14 @@
 - (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
     [self stopScan];
     
-    [self trace:@"Connected to tap %@]", peripheral.identifier.UUIDString];
+    [self trace:@"Connected to tap %@", peripheral.identifier.UUIDString];
     
     _currentPeripheral = peripheral;
     peripheral.delegate = self;
     
     NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:MYLE_SERVICE], /*[CBUUID UUIDWithString:BATTERY_SERVICE_UUID],*/ nil];
+    
+    [self trace:@"Discovering services...."];
     [peripheral discoverServices:servicesTap];
 }
 
@@ -482,11 +484,11 @@
 // List services
 - (void)peripheral:(CBPeripheral *)peripheral didDiscoverServices:(NSError *)error {
     if (error) {
-        [self trace:@"Error discovering services: %@", peripheral.identifier.UUIDString, error];
+        [self trace:@"Error discovering services %@", error];
         [self cleanup];
         return;
     }
-    [self trace:@"Discovering services: %@", peripheral.identifier.UUIDString];
+    [self trace:@"Discovering characteristics for services %@...", peripheral.services];
     
     // List 2 characteristics
     NSArray * characteristics = [NSArray arrayWithObjects:
@@ -516,7 +518,7 @@
         [self cleanup];
         return;
     }
-    [self trace:@"Discovered characteristics for service %@", service.UUID.UUIDString];
+    [self trace:@"Discovered characteristics for service %@: %@", service, service.characteristics];
     
     if ([[service UUID] isEqual:[CBUUID UUIDWithString:BATTERY_SERVICE_UUID]]) {
         _batteryLevelChrt = [self getCharacteristic:BATTERY_LEVEL_UUID forService:service];

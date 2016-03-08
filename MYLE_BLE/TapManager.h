@@ -71,6 +71,12 @@ enum _RECEIVE_MODE {
 // Disconnects currently connected peripheral
 - (void)disconnect;
 
+// Sends a command to tap to make some noise
+- (void)locate;
+
+// Resets tap to factory defaults
+- (void)resetToFactoryDefaults;
+
 // Start scan
 - (void)startScan;
 

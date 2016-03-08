@@ -196,6 +196,23 @@
 }
 
 
+// Sends a command to tap to make some noise
+- (void)locate {
+    [self trace:@"Sending 'Bluetooth Locator' command"];
+    Byte bytes[1] = { 0x01 };
+    [_currentPeripheral writeValue:[NSData dataWithBytes:bytes length:1] forCharacteristic:_COMMAND_BLUETOOTH_LOCATOR type:CBCharacteristicWriteWithResponse];
+}
+
+
+// Resets tap to factory defaults
+- (void)resetToFactoryDefaults {
+    [self trace:@"Sending 'Factory Reset' command"];
+    Byte bytes[1] = { 0x01 };
+    [_currentPeripheral writeValue:[NSData dataWithBytes:bytes length:1] forCharacteristic:_COMMAND_FACTORY_RESET type:CBCharacteristicWriteWithResponse];
+}
+
+
+
 // Start scan
 - (void)startScan {
     if (_isScanning) { return; }
@@ -875,7 +892,7 @@
     NSMutableData *paddedData = [NSMutableData dataWithData:passwordData];
     [paddedData increaseLengthBy:12 - passwordData.length];
     
-    [self trace:@"Sent password: %@", paddedData];
+    [self trace:@"Sending password: %@", paddedData];
     [_currentPeripheral writeValue:paddedData forCharacteristic:_COMMAND_PASSWORD type:CBCharacteristicWriteWithResponse];
 }
 
@@ -896,7 +913,7 @@
     Byte byteData[6] = { second & 0xff, minute & 0xff, hour & 0xff, day & 0xff, month & 0xff, (year - 2000) & 0xff };
     NSData *data = [NSData dataWithBytes:byteData length:6];
     
-    [self trace:@"Sent current time: %@", data];
+    [self trace:@"Sending current time: %@", data];
     [_currentPeripheral writeValue:data forCharacteristic:_COMMAND_UPDATE_TIME type:CBCharacteristicWriteWithResponse];
 }
 

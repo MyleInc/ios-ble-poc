@@ -1007,11 +1007,11 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 }
 
 - (void)sendReadVERSION {
-    [_currentPeripheral readValueForCharacteristic:_STATUS_VERSION];
+    //[_currentPeripheral readValueForCharacteristic:_STATUS_VERSION];
 }
 
 - (void)sendReadBATTERY_LEVEL {
-    [_currentPeripheral readValueForCharacteristic:_batteryLevelChrt];
+    //[_currentPeripheral readValueForCharacteristic:_batteryLevelChrt];
 }
 
 /************ END READ PARAMETER ****************/

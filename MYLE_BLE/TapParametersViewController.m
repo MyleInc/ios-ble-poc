@@ -37,12 +37,31 @@
     
     self.tfBATTERY_LEVEL.enabled = NO;
     self.tfVERSION.enabled = NO;
-    
-    [self readAll];
 }
 
 
-- (void)readAll {
+- (void)onParameterRead:(NSString*)par intValue:(NSUInteger)intValue strValue:(NSString*)strValue {
+    if ([par isEqual: @"RECLN"]) {
+        self.tfRECLN.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
+    } else if ([par isEqual: @"PAUSELEVEL"]) {
+        self.tfPAUSE_LEVEL.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
+    } else if ([par isEqual: @"PAUSELEN"]) {
+        self.tfPAUSE_LEN.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
+    } else if ([par isEqual: @"ACCELERSENS"]) {
+        self.tfACCELER_SENS.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
+    } else if ([par isEqual: @"MIC"]) {
+        self.tfMIC.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
+    } else if ([par isEqual: @"PASSWORD"]) {
+        self.tfPASSWORD.text = strValue;
+    } else if ([par isEqual: @"VERSION"]) {
+        self.tfVERSION.text = strValue;
+    } else if ([par isEqual: @"BATTERY_LEVEL"]) {
+        self.tfBATTERY_LEVEL.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
+    }
+}
+
+
+- (IBAction)readAll:(id)sender {
     if (![_tap isConnected]) {
         NSLog(@"Tap not connected");
         
@@ -68,28 +87,6 @@
     // get current password
     //self.tfPASSWORD.text = [_tap getCurrentTapPassword];
 }
-
-
-- (void)onParameterRead:(NSString*)par intValue:(NSUInteger)intValue strValue:(NSString*)strValue {
-    if ([par isEqual: @"RECLN"]) {
-        self.tfRECLN.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
-    } else if ([par isEqual: @"PAUSELEVEL"]) {
-        self.tfPAUSE_LEVEL.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
-    } else if ([par isEqual: @"PAUSELEN"]) {
-        self.tfPAUSE_LEN.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
-    } else if ([par isEqual: @"ACCELERSENS"]) {
-        self.tfACCELER_SENS.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
-    } else if ([par isEqual: @"MIC"]) {
-        self.tfMIC.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
-    } else if ([par isEqual: @"PASSWORD"]) {
-        self.tfPASSWORD.text = strValue;
-    } else if ([par isEqual: @"VERSION"]) {
-        self.tfVERSION.text = strValue;
-    } else if ([par isEqual: @"BATTERY_LEVEL"]) {
-        self.tfBATTERY_LEVEL.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
-    }
-}
-
 
 - (IBAction)writeAll:(id)sender {
     [_tap sendWriteRECLN:[self byteFromString:[self.tfRECLN text]]];

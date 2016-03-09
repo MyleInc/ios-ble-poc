@@ -31,6 +31,8 @@
 
 @property (weak, nonatomic) IBOutlet UIScrollView *scrollView;
 
+- (IBAction)readAll:(id)sender;
+
 - (IBAction)writeAll:(id)sender;
 
 - (IBAction)clickReset:(id)sender;

@@ -1003,7 +1003,7 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 }
 
 - (void)sendReadPASSWORD {
-    //[_currentPeripheral readValueForCharacteristic:_SETTING_PASSWORD];
+    [_currentPeripheral readValueForCharacteristic:_SETTING_PASSWORD];
 }
 
 - (void)sendReadVERSION {

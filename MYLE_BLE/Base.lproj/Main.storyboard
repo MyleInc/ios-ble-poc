@@ -163,12 +163,19 @@
                                         </connections>
                                     </textField>
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="4PL-ZQ-CAW">
-                                        <rect key="frame" x="98" y="271" width="124" height="30"/>
+                                        <rect key="frame" x="158" y="271" width="124" height="30"/>
                                         <state key="normal" title="Write Settings">
                                             <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                         </state>
                                         <connections>
                                             <action selector="writeAll:" destination="7ug-kD-9Lw" eventType="touchUpInside" id="Mi3-8F-QKU"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Og5-4d-qLy">
+                                        <rect key="frame" x="32" y="271" width="104" height="30"/>
+                                        <state key="normal" title="Read Settings"/>
+                                        <connections>
+                                            <action selector="readAll:" destination="7ug-kD-9Lw" eventType="touchUpInside" id="aeZ-4v-Hob"/>
                                         </connections>
                                     </button>
                                 </subviews>

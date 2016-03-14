@@ -376,7 +376,7 @@
     
     [_availableTaps addObject:peripheral];
 
-    // notify subscribers abuout new peripheral
+    // notify subscribers about new peripheral
     [self trace:@"Broadcasting about scan changes"];
     [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                             object:nil
@@ -410,7 +410,7 @@
     _currentPeripheral = peripheral;
     peripheral.delegate = self;
     
-    NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:MYLE_SERVICE], [CBUUID UUIDWithString:DEVINFO_SERVICE_UUID], /*[CBUUID UUIDWithString:BATTERY_SERVICE_UUID],*/ nil];
+    NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:MYLE_SERVICE], [CBUUID UUIDWithString:DEVINFO_SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
     
     [self trace:@"Discovering services...."];
     [peripheral discoverServices:servicesTap];
@@ -517,8 +517,8 @@
                                  [CBUUID UUIDWithString:MYLE_CHAR_COMMAND_UPDATE_TIME],
                                  [CBUUID UUIDWithString:MYLE_CHAR_STATUS_FLAGS],
                                  [CBUUID UUIDWithString:DEVINFO_FIRMWARE_REV_UUID],
-                                 [CBUUID UUIDWithString:DEVINFO_HARDWARE_REV_UUID]/*,
-                                 [CBUUID UUIDWithString:BATTERY_LEVEL_UUID]*/, nil];
+                                 [CBUUID UUIDWithString:DEVINFO_HARDWARE_REV_UUID],
+                                 [CBUUID UUIDWithString:BATTERY_LEVEL_UUID], nil];
     for (CBService *service in peripheral.services) {
         [peripheral discoverCharacteristics:characteristics forService:service];
     }
@@ -1027,7 +1027,7 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 }
 
 - (void)sendReadBATTERY_LEVEL {
-    //[_currentPeripheral readValueForCharacteristic:_batteryLevelChrt];
+    [_currentPeripheral readValueForCharacteristic:_batteryLevelChrt];
 }
 
 - (void)sendReadFirmwareVersion {

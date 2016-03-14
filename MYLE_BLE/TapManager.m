@@ -78,6 +78,8 @@
     NSMutableArray *_traceListeners;
     
     float _progress;
+    
+    NSMutableDictionary *_uuidMacMap;
 }
 
 
@@ -121,6 +123,8 @@
     _traceListeners = [[NSMutableArray alloc] init];
     
     _availableTaps = [[NSMutableArray alloc] initWithCapacity:100];
+    
+    _uuidMacMap = [[NSMutableDictionary alloc] init];
     
     return self;
 }
@@ -371,6 +375,8 @@
     
     [self trace:@"Discovered peripheral %@ with advertisement data: %@", peripheral, advertisementData];
     
+    [_uuidMacMap setObject:[advertisementData objectForKey:@"kCBAdvDataManufacturerData"] forKey:peripheral.identifier.UUIDString];
+    
     // if devices is not in our list - add it and notify subscribers
     if ([_availableTaps containsObject:peripheral]) { return; }
     
@@ -408,6 +414,10 @@
     [self trace:@"Connected to tap %@", peripheral.identifier.UUIDString];
     
     _currentPeripheral = peripheral;
+    NSData *macData = (NSData*)[_uuidMacMap objectForKey:peripheral.identifier.UUIDString];
+    Byte *mac = (Byte*)macData.bytes;
+    _currentMAC = [NSString stringWithFormat:@"%02x:%02x:%02x:%02x:%02x:%02x", mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]];
+    
     peripheral.delegate = self;
     
     NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:MYLE_SERVICE], [CBUUID UUIDWithString:DEVINFO_SERVICE_UUID], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], nil];
@@ -1049,6 +1059,12 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 
 - (NSString*) getCurrentTapPassword {
     return _currentPass;
+}
+
+
+- (NSString*) getCurrentTapMAC
+{
+    return _currentMAC;
 }
 
 

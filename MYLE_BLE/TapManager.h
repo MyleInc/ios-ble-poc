@@ -56,6 +56,9 @@ enum _RECEIVE_MODE {
 // Returns password of current or last connected TAP
 - (NSString*)getCurrentTapPassword;
 
+// Returns MAC of current or last connected TAP
+- (NSString*)getCurrentTapMAC;
+
 // Forgets current TAP UUID and password
 - (void)forgetCurrent;
 

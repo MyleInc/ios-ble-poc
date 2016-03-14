@@ -82,7 +82,7 @@
     BOOL connected = [[_tap getCurrentTapUUID] isEqualToString:peripheral.identifier.UUIDString] && [_tap isConnected];
     
     cell.lbName.text = peripheral.name;
-    cell.lbUUID.text = peripheral.identifier.UUIDString;
+    cell.lbUUID.text = [_tap getCurrentTapMAC];
     
     if (connected) {
         cell.selectionStyle = UITableViewCellSelectionStyleNone;

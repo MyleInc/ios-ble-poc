@@ -39,11 +39,14 @@
     CBCharacteristic* _COMMAND_UPDATE_TIME;
     
     // Status
-    CBCharacteristic* _STATUS_VERSION;
     CBCharacteristic* _STATUS_FLAGS;
     
     // Battery
     CBCharacteristic* _batteryLevelChrt;
+    
+    // DevInfo
+    CBCharacteristic* _devInfoHardwareRevChrt;
+    CBCharacteristic* _devInfoFirmwareRevChrt;
     
     NSString *_currentUUID;
     NSString *_currentPass;
@@ -266,7 +269,8 @@
         // have we disconvered our services?
         CBService *myleService = [self getService:MYLE_SERVICE forPeripheral:peripheral];
         CBService *batteryService = [self getService:BATTERY_SERVICE_UUID forPeripheral:peripheral];
-        if (!myleService || !batteryService) {
+        CBService *devInfoService = [self getService:DEVINFO_SERVICE_UUID forPeripheral:peripheral];
+        if (!myleService || !batteryService || !devInfoService) {
             // we haven't yet!
             NSArray *services = @[[CBUUID UUIDWithString:MYLE_SERVICE], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID]];
             [peripheral discoverServices:services];
@@ -284,11 +288,10 @@
         _COMMAND_PASSWORD = [self getCharacteristic:MYLE_CHAR_COMMAND_PASSWORD forService:myleService];
         _COMMAND_FACTORY_RESET = [self getCharacteristic:MYLE_CHAR_COMMAND_FACTORY_RESET forService:myleService];
         _COMMAND_UPDATE_TIME = [self getCharacteristic:MYLE_CHAR_COMMAND_UPDATE_TIME forService:myleService];
-        _STATUS_VERSION = [self getCharacteristic:MYLE_CHAR_STATUS_VERSION forService:myleService];
         _STATUS_FLAGS = [self getCharacteristic:MYLE_CHAR_STATUS_FLAGS forService:myleService];
         
-        if (!_SETTING_AUDIO_LENGTH || !_SETTING_MIC_LEVEL || !_SETTING_SILENCE_LEVEL || !_SETTING_SILENCE_LENGTH || !_SETTING_ACCELEROMETER_SENSITIVITY || !_SETTING_PASSWORD || !_COMMAND_BLUETOOTH_LOCATOR || !_COMMAND_PASSWORD || !_COMMAND_FACTORY_RESET || !_COMMAND_UPDATE_TIME || !_STATUS_VERSION || !_STATUS_FLAGS) {
-            [peripheral discoverCharacteristics:@[MYLE_CHAR_SETTING_AUDIO_LENGTH, MYLE_CHAR_SETTING_MIC_LEVEL, MYLE_CHAR_SETTING_SILENCE_LEVEL, MYLE_CHAR_SETTING_SILENCE_LENGTH, MYLE_CHAR_SETTING_ACCELEROMETER_SENSITIVITY,MYLE_CHAR_SETTING_PASSWORD, MYLE_CHAR_COMMAND_BLUETOOTH_LOCATOR, MYLE_CHAR_COMMAND_PASSWORD, MYLE_CHAR_COMMAND_FACTORY_RESET, MYLE_CHAR_COMMAND_UPDATE_TIME, MYLE_CHAR_STATUS_VERSION, MYLE_CHAR_STATUS_FLAGS] forService:myleService];
+        if (!_SETTING_AUDIO_LENGTH || !_SETTING_MIC_LEVEL || !_SETTING_SILENCE_LEVEL || !_SETTING_SILENCE_LENGTH || !_SETTING_ACCELEROMETER_SENSITIVITY || !_SETTING_PASSWORD || !_COMMAND_BLUETOOTH_LOCATOR || !_COMMAND_PASSWORD || !_COMMAND_FACTORY_RESET || !_COMMAND_UPDATE_TIME || !_STATUS_FLAGS) {
+            [peripheral discoverCharacteristics:@[MYLE_CHAR_SETTING_AUDIO_LENGTH, MYLE_CHAR_SETTING_MIC_LEVEL, MYLE_CHAR_SETTING_SILENCE_LEVEL, MYLE_CHAR_SETTING_SILENCE_LENGTH, MYLE_CHAR_SETTING_ACCELEROMETER_SENSITIVITY,MYLE_CHAR_SETTING_PASSWORD, MYLE_CHAR_COMMAND_BLUETOOTH_LOCATOR, MYLE_CHAR_COMMAND_PASSWORD, MYLE_CHAR_COMMAND_FACTORY_RESET, MYLE_CHAR_COMMAND_UPDATE_TIME, MYLE_CHAR_STATUS_FLAGS] forService:myleService];
             return;
         }
         
@@ -296,6 +299,15 @@
         _batteryLevelChrt = [self getCharacteristic:BATTERY_LEVEL_UUID forService:batteryService];
         if (!_batteryLevelChrt) {
             [peripheral discoverCharacteristics:@[BATTERY_LEVEL_UUID] forService:batteryService];
+            return;
+        }
+        
+        // have we discovered dev info characteristics
+        _devInfoHardwareRevChrt = [self getCharacteristic:DEVINFO_HARDWARE_REV_UUID forService:devInfoService];
+        _devInfoFirmwareRevChrt = [self getCharacteristic:DEVINFO_FIRMWARE_REV_UUID forService:devInfoService];
+        if (!_devInfoHardwareRevChrt || !_devInfoFirmwareRevChrt) {
+            [peripheral discoverCharacteristics:@[DEVINFO_HARDWARE_REV_UUID] forService:devInfoService];
+            [peripheral discoverCharacteristics:@[DEVINFO_FIRMWARE_REV_UUID] forService:devInfoService];
             return;
         }
         
@@ -398,7 +410,7 @@
     _currentPeripheral = peripheral;
     peripheral.delegate = self;
     
-    NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:MYLE_SERVICE], /*[CBUUID UUIDWithString:BATTERY_SERVICE_UUID],*/ nil];
+    NSArray * servicesTap = [NSArray arrayWithObjects: [CBUUID UUIDWithString:MYLE_SERVICE], [CBUUID UUIDWithString:DEVINFO_SERVICE_UUID], /*[CBUUID UUIDWithString:BATTERY_SERVICE_UUID],*/ nil];
     
     [self trace:@"Discovering services...."];
     [peripheral discoverServices:servicesTap];
@@ -462,9 +474,10 @@
     _COMMAND_PASSWORD = nil;
     _COMMAND_FACTORY_RESET = nil;
     _COMMAND_UPDATE_TIME = nil;
-    _STATUS_VERSION = nil;
     _STATUS_FLAGS = nil;
     _batteryLevelChrt = nil;
+    _devInfoHardwareRevChrt = nil;
+    _devInfoFirmwareRevChrt = nil;
 }
 
 
@@ -502,8 +515,9 @@
                                  [CBUUID UUIDWithString:MYLE_CHAR_COMMAND_PASSWORD],
                                  [CBUUID UUIDWithString:MYLE_CHAR_COMMAND_FACTORY_RESET],
                                  [CBUUID UUIDWithString:MYLE_CHAR_COMMAND_UPDATE_TIME],
-                                 [CBUUID UUIDWithString:MYLE_CHAR_STATUS_VERSION],
-                                 [CBUUID UUIDWithString:MYLE_CHAR_STATUS_FLAGS]/*,
+                                 [CBUUID UUIDWithString:MYLE_CHAR_STATUS_FLAGS],
+                                 [CBUUID UUIDWithString:DEVINFO_FIRMWARE_REV_UUID],
+                                 [CBUUID UUIDWithString:DEVINFO_HARDWARE_REV_UUID]/*,
                                  [CBUUID UUIDWithString:BATTERY_LEVEL_UUID]*/, nil];
     for (CBService *service in peripheral.services) {
         [peripheral discoverCharacteristics:characteristics forService:service];
@@ -536,11 +550,13 @@
         _COMMAND_PASSWORD = [self getCharacteristic:MYLE_CHAR_COMMAND_PASSWORD forService:service];
         _COMMAND_FACTORY_RESET = [self getCharacteristic:MYLE_CHAR_COMMAND_FACTORY_RESET forService:service];
         _COMMAND_UPDATE_TIME = [self getCharacteristic:MYLE_CHAR_COMMAND_UPDATE_TIME forService:service];
-        _STATUS_VERSION = [self getCharacteristic:MYLE_CHAR_STATUS_VERSION forService:service];
         _STATUS_FLAGS = [self getCharacteristic:MYLE_CHAR_STATUS_FLAGS forService:service];
         if (_STATUS_FLAGS) {
             [peripheral setNotifyValue:YES forCharacteristic:_STATUS_FLAGS];
         }
+    } else if ([[service UUID] isEqual:[CBUUID UUIDWithString:DEVINFO_SERVICE_UUID]]) {
+        _devInfoHardwareRevChrt = [self getCharacteristic:DEVINFO_HARDWARE_REV_UUID forService:service];
+        _devInfoFirmwareRevChrt = [self getCharacteristic:DEVINFO_FIRMWARE_REV_UUID forService:service];
     }
 }
 
@@ -618,9 +634,13 @@
     {
         [self notifyReadParameterListeners:@"PASSWORD" intValue:0 strValue:[[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding]];
     }
-    else if (characteristic == _STATUS_VERSION)
+    else if (characteristic == _devInfoFirmwareRevChrt)
     {
-        [self notifyReadParameterListeners:@"VERSION" intValue:0 strValue:[NSString stringWithFormat:@"%d.%d.%d", bytes[0], bytes[1], bytes[2]]];
+        [self notifyReadParameterListeners:@"FWVERSION" intValue:0 strValue:[[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding]];
+    }
+    else if (characteristic == _devInfoHardwareRevChrt)
+    {
+        [self notifyReadParameterListeners:@"HWVERSION" intValue:0 strValue:[[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding]];
     }
     
 
@@ -1006,12 +1026,16 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
     [_currentPeripheral readValueForCharacteristic:_SETTING_PASSWORD];
 }
 
-- (void)sendReadVERSION {
-    //[_currentPeripheral readValueForCharacteristic:_STATUS_VERSION];
-}
-
 - (void)sendReadBATTERY_LEVEL {
     //[_currentPeripheral readValueForCharacteristic:_batteryLevelChrt];
+}
+
+- (void)sendReadFirmwareVersion {
+    [_currentPeripheral readValueForCharacteristic:_devInfoFirmwareRevChrt];
+}
+
+- (void)sendReadHardwareVersion {
+    [_currentPeripheral readValueForCharacteristic:_devInfoHardwareRevChrt];
 }
 
 /************ END READ PARAMETER ****************/

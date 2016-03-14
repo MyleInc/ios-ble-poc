@@ -105,7 +105,8 @@ enum _RECEIVE_MODE {
 - (void)sendReadPAUSELEN;
 - (void)sendReadACCELERSENS;
 - (void)sendReadPASSWORD;
-- (void)sendReadVERSION;
 - (void)sendReadBATTERY_LEVEL;
+- (void)sendReadFirmwareVersion;
+- (void)sendReadHardwareVersion;
 
 @end

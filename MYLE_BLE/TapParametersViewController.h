@@ -23,8 +23,6 @@
 
 @property (weak, nonatomic) IBOutlet UITextField *tfPASSWORD;
 
-@property (weak, nonatomic) IBOutlet UITextField *tfVERSION;
-
 @property (weak, nonatomic) IBOutlet UITextField *tfBATTERY_LEVEL;
 
 @property (weak, nonatomic) IBOutlet UITextView *tvUUID;
@@ -40,5 +38,7 @@
 - (IBAction)clickDisconnect:(id)sender;
 
 - (IBAction)clickLocate:(id)sender;
+@property (weak, nonatomic) IBOutlet UITextField *fwVersion;
+@property (weak, nonatomic) IBOutlet UITextField *hwVersion;
 
 @end

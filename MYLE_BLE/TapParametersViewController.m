@@ -36,7 +36,8 @@
     self.scrollView.contentSize = CGSizeMake(self.scrollView.superview.frame.size.width, 600);
     
     self.tfBATTERY_LEVEL.enabled = NO;
-    self.tfVERSION.enabled = NO;
+    self.fwVersion.enabled = NO;
+    self.hwVersion.enabled = NO;
 }
 
 
@@ -53,10 +54,12 @@
         self.tfMIC.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
     } else if ([par isEqual: @"PASSWORD"]) {
         self.tfPASSWORD.text = strValue;
-    } else if ([par isEqual: @"VERSION"]) {
-        self.tfVERSION.text = strValue;
     } else if ([par isEqual: @"BATTERY_LEVEL"]) {
         self.tfBATTERY_LEVEL.text = [NSString stringWithFormat:@"%lu", (unsigned long)intValue];
+    } else if ([par isEqual: @"FWVERSION"]) {
+        self.fwVersion.text = strValue;
+    } else if ([par isEqual: @"HWVERSION"]) {
+        self.hwVersion.text = strValue;
     }
 }
 
@@ -81,8 +84,9 @@
     [_tap sendReadPAUSELEN];
     [_tap sendReadACCELERSENS];
     [_tap sendReadPASSWORD];
-    [_tap sendReadVERSION];
     [_tap sendReadBATTERY_LEVEL];
+    [_tap sendReadFirmwareVersion];
+    [_tap sendReadHardwareVersion];
     
     // get current password
     //self.tfPASSWORD.text = [_tap getCurrentTapPassword];

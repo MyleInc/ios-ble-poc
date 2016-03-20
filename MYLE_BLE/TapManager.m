@@ -33,13 +33,18 @@
     CBCharacteristic* _SETTING_PASSWORD;
     
     // Commands
+    CBCharacteristic* _COMMAND_AUDIO_FILE_DISPOSITION;
+    CBCharacteristic* _COMMAND_AUDIO_FILE_RECEIVED;
     CBCharacteristic* _COMMAND_BLUETOOTH_LOCATOR;
-    CBCharacteristic* _COMMAND_PASSWORD;
     CBCharacteristic* _COMMAND_FACTORY_RESET;
+    CBCharacteristic* _COMMAND_PASSWORD;
     CBCharacteristic* _COMMAND_UPDATE_TIME;
     
     // Status
-    CBCharacteristic* _STATUS_FLAGS;
+    CBCharacteristic* _STATUS_AUDIO_FILE_PACKET;
+    CBCharacteristic* _STATUS_AUDIO_FILE_SENT;
+    CBCharacteristic* _STATUS_AUDIO_FILE_STORED;
+    CBCharacteristic* _STATUS_PASSWORD_VALIDITY;
     
     // Battery
     CBCharacteristic* _batteryLevelChrt;
@@ -80,6 +85,8 @@
     float _progress;
     
     NSMutableDictionary *_uuidMacMap;
+    
+    NSArray *_myleChrts;
 }
 
 
@@ -110,6 +117,27 @@
 - (instancetype)init
 {
     self = [super init];
+    
+    _myleChrts = @[
+                   MYLE_CHAR_SETTING_AUDIO_LENGTH,
+                   MYLE_CHAR_SETTING_MIC_LEVEL,
+                   MYLE_CHAR_SETTING_SILENCE_LEVEL,
+                   MYLE_CHAR_SETTING_SILENCE_LENGTH,
+                   MYLE_CHAR_SETTING_ACCELEROMETER_SENSITIVITY,
+                   MYLE_CHAR_SETTING_PASSWORD,
+                   
+                   MYLE_CHAR_COMMAND_AUDIO_FILE_DISPOSITION,
+                   MYLE_CHAR_COMMAND_AUDIO_FILE_RECEIVED,
+                   MYLE_CHAR_COMMAND_BLUETOOTH_LOCATOR,
+                   MYLE_CHAR_COMMAND_FACTORY_RESET,
+                   MYLE_CHAR_COMMAND_PASSWORD,
+                   MYLE_CHAR_COMMAND_UPDATE_TIME,
+                   
+                   MYLE_CHAR_STATUS_AUDIO_FILE_PACKET,
+                   MYLE_CHAR_STATUS_AUDIO_FILE_SENT,
+                   MYLE_CHAR_STATUS_AUDIO_FILE_STORED,
+                   MYLE_CHAR_STATUS_PASSWORD_VALIDITY
+    ];
     
     dispatch_queue_t centralQueue = dispatch_get_global_queue(QOS_CLASS_BACKGROUND, 0);
     
@@ -271,31 +299,53 @@
     
     if (peripheral.state == CBPeripheralStateConnected) {
         // have we disconvered our services?
-        CBService *myleService = [self getService:MYLE_SERVICE forPeripheral:peripheral];
+        CBService *service = [self getService:MYLE_SERVICE forPeripheral:peripheral];
         CBService *batteryService = [self getService:BATTERY_SERVICE_UUID forPeripheral:peripheral];
         CBService *devInfoService = [self getService:DEVINFO_SERVICE_UUID forPeripheral:peripheral];
-        if (!myleService || !batteryService || !devInfoService) {
+        if (!service || !batteryService || !devInfoService) {
             // we haven't yet!
-            NSArray *services = @[[CBUUID UUIDWithString:MYLE_SERVICE], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID]];
+            NSArray *services = @[[CBUUID UUIDWithString:MYLE_SERVICE], [CBUUID UUIDWithString:BATTERY_SERVICE_UUID], [CBUUID UUIDWithString:DEVINFO_SERVICE_UUID]];
             [peripheral discoverServices:services];
             return;
         }
         
         // have we discovered MYLE characteristics?
-        _SETTING_AUDIO_LENGTH = [self getCharacteristic:MYLE_CHAR_SETTING_AUDIO_LENGTH forService:myleService];
-        _SETTING_MIC_LEVEL = [self getCharacteristic:MYLE_CHAR_SETTING_MIC_LEVEL forService:myleService];
-        _SETTING_SILENCE_LEVEL = [self getCharacteristic:MYLE_CHAR_SETTING_SILENCE_LEVEL forService:myleService];
-        _SETTING_SILENCE_LENGTH = [self getCharacteristic:MYLE_CHAR_SETTING_SILENCE_LENGTH forService:myleService];
-        _SETTING_ACCELEROMETER_SENSITIVITY = [self getCharacteristic:MYLE_CHAR_SETTING_ACCELEROMETER_SENSITIVITY forService:myleService];
-        _SETTING_PASSWORD = [self getCharacteristic:MYLE_CHAR_SETTING_PASSWORD forService:myleService];
-        _COMMAND_BLUETOOTH_LOCATOR = [self getCharacteristic:MYLE_CHAR_COMMAND_BLUETOOTH_LOCATOR forService:myleService];
-        _COMMAND_PASSWORD = [self getCharacteristic:MYLE_CHAR_COMMAND_PASSWORD forService:myleService];
-        _COMMAND_FACTORY_RESET = [self getCharacteristic:MYLE_CHAR_COMMAND_FACTORY_RESET forService:myleService];
-        _COMMAND_UPDATE_TIME = [self getCharacteristic:MYLE_CHAR_COMMAND_UPDATE_TIME forService:myleService];
-        _STATUS_FLAGS = [self getCharacteristic:MYLE_CHAR_STATUS_FLAGS forService:myleService];
+        _SETTING_AUDIO_LENGTH = [self getCharacteristic:MYLE_CHAR_SETTING_AUDIO_LENGTH forService:service];
+        _SETTING_MIC_LEVEL = [self getCharacteristic:MYLE_CHAR_SETTING_MIC_LEVEL forService:service];
+        _SETTING_SILENCE_LEVEL = [self getCharacteristic:MYLE_CHAR_SETTING_SILENCE_LEVEL forService:service];
+        _SETTING_SILENCE_LENGTH = [self getCharacteristic:MYLE_CHAR_SETTING_SILENCE_LENGTH forService:service];
+        _SETTING_ACCELEROMETER_SENSITIVITY = [self getCharacteristic:MYLE_CHAR_SETTING_ACCELEROMETER_SENSITIVITY forService:service];
+        _SETTING_PASSWORD = [self getCharacteristic:MYLE_CHAR_SETTING_PASSWORD forService:service];
         
-        if (!_SETTING_AUDIO_LENGTH || !_SETTING_MIC_LEVEL || !_SETTING_SILENCE_LEVEL || !_SETTING_SILENCE_LENGTH || !_SETTING_ACCELEROMETER_SENSITIVITY || !_SETTING_PASSWORD || !_COMMAND_BLUETOOTH_LOCATOR || !_COMMAND_PASSWORD || !_COMMAND_FACTORY_RESET || !_COMMAND_UPDATE_TIME || !_STATUS_FLAGS) {
-            [peripheral discoverCharacteristics:@[MYLE_CHAR_SETTING_AUDIO_LENGTH, MYLE_CHAR_SETTING_MIC_LEVEL, MYLE_CHAR_SETTING_SILENCE_LEVEL, MYLE_CHAR_SETTING_SILENCE_LENGTH, MYLE_CHAR_SETTING_ACCELEROMETER_SENSITIVITY,MYLE_CHAR_SETTING_PASSWORD, MYLE_CHAR_COMMAND_BLUETOOTH_LOCATOR, MYLE_CHAR_COMMAND_PASSWORD, MYLE_CHAR_COMMAND_FACTORY_RESET, MYLE_CHAR_COMMAND_UPDATE_TIME, MYLE_CHAR_STATUS_FLAGS] forService:myleService];
+        _COMMAND_AUDIO_FILE_DISPOSITION = [self getCharacteristic:MYLE_CHAR_COMMAND_AUDIO_FILE_DISPOSITION forService:service];
+        _COMMAND_AUDIO_FILE_RECEIVED = [self getCharacteristic:MYLE_CHAR_COMMAND_AUDIO_FILE_RECEIVED forService:service];
+        _COMMAND_BLUETOOTH_LOCATOR = [self getCharacteristic:MYLE_CHAR_COMMAND_BLUETOOTH_LOCATOR forService:service];
+        _COMMAND_FACTORY_RESET = [self getCharacteristic:MYLE_CHAR_COMMAND_FACTORY_RESET forService:service];
+        _COMMAND_PASSWORD = [self getCharacteristic:MYLE_CHAR_COMMAND_PASSWORD forService:service];
+        _COMMAND_UPDATE_TIME = [self getCharacteristic:MYLE_CHAR_COMMAND_UPDATE_TIME forService:service];
+        
+        _STATUS_AUDIO_FILE_PACKET = [self getCharacteristic:MYLE_CHAR_STATUS_AUDIO_FILE_PACKET forService:service];
+        _STATUS_AUDIO_FILE_SENT = [self getCharacteristic:MYLE_CHAR_STATUS_AUDIO_FILE_SENT forService:service];
+        _STATUS_AUDIO_FILE_STORED = [self getCharacteristic:MYLE_CHAR_STATUS_AUDIO_FILE_STORED forService:service];
+        _STATUS_PASSWORD_VALIDITY = [self getCharacteristic:MYLE_CHAR_STATUS_PASSWORD_VALIDITY forService:service];
+        
+        if (!_SETTING_AUDIO_LENGTH ||
+            !_SETTING_MIC_LEVEL ||
+            !_SETTING_SILENCE_LEVEL ||
+            !_SETTING_SILENCE_LENGTH ||
+            !_SETTING_ACCELEROMETER_SENSITIVITY ||
+            !_SETTING_PASSWORD ||
+            !_COMMAND_AUDIO_FILE_DISPOSITION ||
+            !_COMMAND_AUDIO_FILE_RECEIVED ||
+            !_COMMAND_BLUETOOTH_LOCATOR ||
+            !_COMMAND_FACTORY_RESET ||
+            !_COMMAND_PASSWORD ||
+            !_COMMAND_UPDATE_TIME ||
+            !_STATUS_AUDIO_FILE_PACKET ||
+            !_STATUS_AUDIO_FILE_SENT ||
+            !_STATUS_AUDIO_FILE_STORED ||
+            !_STATUS_PASSWORD_VALIDITY) {
+            [peripheral discoverCharacteristics:_myleChrts forService:service];
             return;
         }
         
@@ -310,14 +360,22 @@
         _devInfoHardwareRevChrt = [self getCharacteristic:DEVINFO_HARDWARE_REV_UUID forService:devInfoService];
         _devInfoFirmwareRevChrt = [self getCharacteristic:DEVINFO_FIRMWARE_REV_UUID forService:devInfoService];
         if (!_devInfoHardwareRevChrt || !_devInfoFirmwareRevChrt) {
-            [peripheral discoverCharacteristics:@[DEVINFO_HARDWARE_REV_UUID] forService:devInfoService];
-            [peripheral discoverCharacteristics:@[DEVINFO_FIRMWARE_REV_UUID] forService:devInfoService];
+            [peripheral discoverCharacteristics:@[DEVINFO_HARDWARE_REV_UUID, DEVINFO_FIRMWARE_REV_UUID] forService:devInfoService];
             return;
         }
         
         // are we subscribed?
-        if (!_STATUS_FLAGS.isNotifying) {
-            [peripheral setNotifyValue:YES forCharacteristic:_STATUS_FLAGS];
+        if (!_STATUS_AUDIO_FILE_PACKET.isNotifying) {
+            [peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_PACKET];
+        }
+        if (!_STATUS_AUDIO_FILE_SENT.isNotifying) {
+            [peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_SENT];
+        }
+        if (!_STATUS_AUDIO_FILE_SENT.isNotifying) {
+            [peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_SENT];
+        }
+        if (!_STATUS_PASSWORD_VALIDITY.isNotifying) {
+            [peripheral setNotifyValue:YES forCharacteristic:_STATUS_PASSWORD_VALIDITY];
         }
         
         if (!_batteryLevelChrt.isNotifying) {
@@ -474,17 +532,26 @@
     _receiveMode = RECEIVE_NONE;
     _isConnected = NO;
     _isAuthenticating = NO;
-    _SETTING_AUDIO_LENGTH = nil;
-    _SETTING_MIC_LEVEL = nil;
-    _SETTING_SILENCE_LEVEL = nil;
-    _SETTING_SILENCE_LENGTH = nil;
+    
+    _SETTING_AUDIO_LENGTH = nil,
+    _SETTING_MIC_LEVEL = nil,
+    _SETTING_SILENCE_LEVEL = nil,
+    _SETTING_SILENCE_LENGTH = nil,
     _SETTING_ACCELEROMETER_SENSITIVITY = nil;
     _SETTING_PASSWORD = nil;
+    
+    _COMMAND_AUDIO_FILE_DISPOSITION = nil;
+    _COMMAND_AUDIO_FILE_RECEIVED = nil;
     _COMMAND_BLUETOOTH_LOCATOR = nil;
-    _COMMAND_PASSWORD = nil;
     _COMMAND_FACTORY_RESET = nil;
+    _COMMAND_PASSWORD = nil;
     _COMMAND_UPDATE_TIME = nil;
-    _STATUS_FLAGS = nil;
+    
+    _STATUS_AUDIO_FILE_PACKET = nil;
+    _STATUS_AUDIO_FILE_SENT = nil;
+    _STATUS_AUDIO_FILE_STORED = nil;
+    _STATUS_PASSWORD_VALIDITY = nil;
+    
     _batteryLevelChrt = nil;
     _devInfoHardwareRevChrt = nil;
     _devInfoFirmwareRevChrt = nil;
@@ -513,7 +580,7 @@
     }
     [self trace:@"Discovering characteristics for services %@...", peripheral.services];
     
-    // List 2 characteristics
+    
     NSArray * characteristics = [NSArray arrayWithObjects:
                                  [CBUUID UUIDWithString:MYLE_CHAR_SETTING_AUDIO_LENGTH],
                                  [CBUUID UUIDWithString:MYLE_CHAR_SETTING_MIC_LEVEL],
@@ -521,16 +588,62 @@
                                  [CBUUID UUIDWithString:MYLE_CHAR_SETTING_SILENCE_LENGTH],
                                  [CBUUID UUIDWithString:MYLE_CHAR_SETTING_ACCELEROMETER_SENSITIVITY],
                                  [CBUUID UUIDWithString:MYLE_CHAR_SETTING_PASSWORD],
+                                 
+                                 [CBUUID UUIDWithString:MYLE_CHAR_COMMAND_AUDIO_FILE_DISPOSITION],
+                                 [CBUUID UUIDWithString:MYLE_CHAR_COMMAND_AUDIO_FILE_RECEIVED],
                                  [CBUUID UUIDWithString:MYLE_CHAR_COMMAND_BLUETOOTH_LOCATOR],
-                                 [CBUUID UUIDWithString:MYLE_CHAR_COMMAND_PASSWORD],
                                  [CBUUID UUIDWithString:MYLE_CHAR_COMMAND_FACTORY_RESET],
+                                 [CBUUID UUIDWithString:MYLE_CHAR_COMMAND_PASSWORD],
                                  [CBUUID UUIDWithString:MYLE_CHAR_COMMAND_UPDATE_TIME],
-                                 [CBUUID UUIDWithString:MYLE_CHAR_STATUS_FLAGS],
+                                 
+                                 [CBUUID UUIDWithString:MYLE_CHAR_STATUS_AUDIO_FILE_PACKET],
+                                 [CBUUID UUIDWithString:MYLE_CHAR_STATUS_AUDIO_FILE_SENT],
+                                 [CBUUID UUIDWithString:MYLE_CHAR_STATUS_AUDIO_FILE_STORED],
+                                 [CBUUID UUIDWithString:MYLE_CHAR_STATUS_PASSWORD_VALIDITY],
+                                 
                                  [CBUUID UUIDWithString:DEVINFO_FIRMWARE_REV_UUID],
                                  [CBUUID UUIDWithString:DEVINFO_HARDWARE_REV_UUID],
-                                 [CBUUID UUIDWithString:BATTERY_LEVEL_UUID], nil];
+                                 
+                                 [CBUUID UUIDWithString:BATTERY_LEVEL_UUID],
+                                 
+                                 nil];
     for (CBService *service in peripheral.services) {
         [peripheral discoverCharacteristics:characteristics forService:service];
+    }
+}
+
+
+- (void) initCharacterisitcsForService:(CBService *)service {
+    if ([[service UUID] isEqual:[CBUUID UUIDWithString:BATTERY_SERVICE_UUID]]) {
+        _batteryLevelChrt = [self getCharacteristic:BATTERY_LEVEL_UUID forService:service];
+        [service.peripheral setNotifyValue:YES forCharacteristic:_batteryLevelChrt];
+    } else if ([[service UUID] isEqual:[CBUUID UUIDWithString:MYLE_SERVICE]]) {
+        _SETTING_AUDIO_LENGTH = [self getCharacteristic:MYLE_CHAR_SETTING_AUDIO_LENGTH forService:service];
+        _SETTING_MIC_LEVEL = [self getCharacteristic:MYLE_CHAR_SETTING_MIC_LEVEL forService:service];
+        _SETTING_SILENCE_LEVEL = [self getCharacteristic:MYLE_CHAR_SETTING_SILENCE_LEVEL forService:service];
+        _SETTING_SILENCE_LENGTH = [self getCharacteristic:MYLE_CHAR_SETTING_SILENCE_LENGTH forService:service];
+        _SETTING_ACCELEROMETER_SENSITIVITY = [self getCharacteristic:MYLE_CHAR_SETTING_ACCELEROMETER_SENSITIVITY forService:service];
+        _SETTING_PASSWORD = [self getCharacteristic:MYLE_CHAR_SETTING_PASSWORD forService:service];
+        
+        _COMMAND_AUDIO_FILE_DISPOSITION = [self getCharacteristic:MYLE_CHAR_COMMAND_AUDIO_FILE_DISPOSITION forService:service];
+        _COMMAND_AUDIO_FILE_RECEIVED = [self getCharacteristic:MYLE_CHAR_COMMAND_AUDIO_FILE_RECEIVED forService:service];
+        _COMMAND_BLUETOOTH_LOCATOR = [self getCharacteristic:MYLE_CHAR_COMMAND_BLUETOOTH_LOCATOR forService:service];
+        _COMMAND_FACTORY_RESET = [self getCharacteristic:MYLE_CHAR_COMMAND_FACTORY_RESET forService:service];
+        _COMMAND_PASSWORD = [self getCharacteristic:MYLE_CHAR_COMMAND_PASSWORD forService:service];
+        _COMMAND_UPDATE_TIME = [self getCharacteristic:MYLE_CHAR_COMMAND_UPDATE_TIME forService:service];
+        
+        _STATUS_AUDIO_FILE_PACKET = [self getCharacteristic:MYLE_CHAR_STATUS_AUDIO_FILE_PACKET forService:service];
+        _STATUS_AUDIO_FILE_SENT = [self getCharacteristic:MYLE_CHAR_STATUS_AUDIO_FILE_SENT forService:service];
+        _STATUS_AUDIO_FILE_STORED = [self getCharacteristic:MYLE_CHAR_STATUS_AUDIO_FILE_STORED forService:service];
+        _STATUS_PASSWORD_VALIDITY = [self getCharacteristic:MYLE_CHAR_STATUS_PASSWORD_VALIDITY forService:service];
+        
+        [service.peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_PACKET];
+        [service.peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_SENT];
+        [service.peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_STORED];
+        [service.peripheral setNotifyValue:YES forCharacteristic:_STATUS_PASSWORD_VALIDITY];
+    } else if ([[service UUID] isEqual:[CBUUID UUIDWithString:DEVINFO_SERVICE_UUID]]) {
+        _devInfoHardwareRevChrt = [self getCharacteristic:DEVINFO_HARDWARE_REV_UUID forService:service];
+        _devInfoFirmwareRevChrt = [self getCharacteristic:DEVINFO_FIRMWARE_REV_UUID forService:service];
     }
 }
 
@@ -544,30 +657,7 @@
     }
     [self trace:@"Discovered characteristics for service %@: %@", service, service.characteristics];
     
-    if ([[service UUID] isEqual:[CBUUID UUIDWithString:BATTERY_SERVICE_UUID]]) {
-        _batteryLevelChrt = [self getCharacteristic:BATTERY_LEVEL_UUID forService:service];
-        if (_batteryLevelChrt) {
-            [peripheral setNotifyValue:YES forCharacteristic:_batteryLevelChrt];
-        }
-    } else if ([[service UUID] isEqual:[CBUUID UUIDWithString:MYLE_SERVICE]]) {
-        _SETTING_AUDIO_LENGTH = [self getCharacteristic:MYLE_CHAR_SETTING_AUDIO_LENGTH forService:service];
-        _SETTING_MIC_LEVEL = [self getCharacteristic:MYLE_CHAR_SETTING_MIC_LEVEL forService:service];
-        _SETTING_SILENCE_LEVEL = [self getCharacteristic:MYLE_CHAR_SETTING_SILENCE_LEVEL forService:service];
-        _SETTING_SILENCE_LENGTH = [self getCharacteristic:MYLE_CHAR_SETTING_SILENCE_LENGTH forService:service];
-        _SETTING_ACCELEROMETER_SENSITIVITY = [self getCharacteristic:MYLE_CHAR_SETTING_ACCELEROMETER_SENSITIVITY forService:service];
-        _SETTING_PASSWORD = [self getCharacteristic:MYLE_CHAR_SETTING_PASSWORD forService:service];
-        _COMMAND_BLUETOOTH_LOCATOR = [self getCharacteristic:MYLE_CHAR_COMMAND_BLUETOOTH_LOCATOR forService:service];
-        _COMMAND_PASSWORD = [self getCharacteristic:MYLE_CHAR_COMMAND_PASSWORD forService:service];
-        _COMMAND_FACTORY_RESET = [self getCharacteristic:MYLE_CHAR_COMMAND_FACTORY_RESET forService:service];
-        _COMMAND_UPDATE_TIME = [self getCharacteristic:MYLE_CHAR_COMMAND_UPDATE_TIME forService:service];
-        _STATUS_FLAGS = [self getCharacteristic:MYLE_CHAR_STATUS_FLAGS forService:service];
-        if (_STATUS_FLAGS) {
-            [peripheral setNotifyValue:YES forCharacteristic:_STATUS_FLAGS];
-        }
-    } else if ([[service UUID] isEqual:[CBUUID UUIDWithString:DEVINFO_SERVICE_UUID]]) {
-        _devInfoHardwareRevChrt = [self getCharacteristic:DEVINFO_HARDWARE_REV_UUID forService:service];
-        _devInfoFirmwareRevChrt = [self getCharacteristic:DEVINFO_FIRMWARE_REV_UUID forService:service];
-    }
+    [self initCharacterisitcsForService:service];
 }
 
 

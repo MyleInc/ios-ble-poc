@@ -17,6 +17,29 @@
 @end
 
 
+typedef struct {
+    UInt16  fileIndex;
+    Byte command;
+} AudioFileDisposition;
+
+
+typedef struct {
+    Byte  version;
+    Byte  fileExists;
+    Byte  timeValid;
+    Byte  codeId;
+    Byte  second;
+    Byte  minute;
+    Byte  hour;
+    Byte  day;
+    Byte  month;
+    Byte  year;
+    UInt32  fileSize;
+    UInt16  packetSize;
+    UInt16 fileIndex;
+} AudioFileStored;
+
+
 
 @implementation TapManager
 {
@@ -87,6 +110,8 @@
     NSMutableDictionary *_uuidMacMap;
     
     NSArray *_myleChrts;
+    
+    UInt32 _currentFileIndex;
 }
 
 
@@ -681,7 +706,8 @@
     
     Byte *bytes = (Byte*)(characteristic.value.bytes);
 
-    if (characteristic == _STATUS_FLAGS) {
+    if (characteristic == _STATUS_PASSWORD_VALIDITY)
+    {
         // if we are in the middle of authentication, and received password status flag set to 1, then we are authenticated
         if (_isAuthenticating) {
             if (((Byte*)characteristic.value.bytes)[0] & 0x01) {
@@ -698,14 +724,38 @@
                 
                 [self trace:@"Sending current time"];
                 [self sendCurrentTime];
+                
+                // check maybe there are files stored in TAP
+                [_currentPeripheral readValueForCharacteristic:_STATUS_AUDIO_FILE_STORED];
             }
-        } else if (bytes[0] & 0x02) {
-            [self trace:@"There is a record on device! Nothing to do yet"];
         }
     }
-    
-    
-    if (characteristic == _batteryLevelChrt)
+    else if (characteristic == _STATUS_AUDIO_FILE_STORED)
+    {
+        AudioFileStored *metadata = (AudioFileStored*)characteristic.value.bytes;
+        
+        [self trace:@"Received Audio File Strored value:\r\n\tMetadata version: %@\r\n\tFile exists: %@\r\n\tTime and date valid: %@\r\n\tCodec ID: %@\r\n\tSecond: %@\r\n\tMinute: %@\r\n\tHour: %@\r\n\tDay: %@\r\n\tMonth: %@\r\n\tYear: %@\r\n\tFile size: %@\r\n\tPacket size: %@\r\n\tFile index: %@", metadata->version, metadata->fileExists, metadata->timeValid, metadata->codeId, metadata->second, metadata->minute, metadata->hour, metadata->day, metadata->month, metadata->year, metadata->fileSize, metadata->packetSize, metadata->fileIndex];
+        
+        if (metadata->fileExists) {
+            [self trace:@"File exists on TAP, sending command to initiate file transfer"];
+            
+            AudioFileDisposition cmd;
+            cmd.fileIndex = metadata->fileIndex;
+            cmd.command = 0; // transfer file
+            
+            //_currentFileIndex = metadata->fileIndex;
+            
+            [_currentPeripheral writeValue:[NSData dataWithBytes:&cmd length:sizeof(AudioFileDisposition)] forCharacteristic:_COMMAND_AUDIO_FILE_DISPOSITION type:CBCharacteristicWriteWithResponse];
+        }
+    }
+    else if (characteristic == _STATUS_AUDIO_FILE_SENT)
+    {
+        UInt32 *fileIndex = (UInt32*)characteristic.value.bytes;
+        [self trace:@"Received audio with File Index %@! Sending back Audio File Received command...", *fileIndex];
+        
+        [_currentPeripheral writeValue:[NSData dataWithBytes:&fileIndex length:sizeof(UInt32)] forCharacteristic:_COMMAND_AUDIO_FILE_RECEIVED type:CBCharacteristicWriteWithResponse];
+    }
+    else  if (characteristic == _batteryLevelChrt)
     {
         [self trace:@"Battery level received: %d", bytes[0]];
         [self notifyReadParameterListeners:@"BATTERY_LEVEL" intValue:bytes[0] strValue:nil];
@@ -794,7 +844,7 @@
     
     [self trace:@"Changed notification state to %@ on characteristic %@", characteristic.isNotifying ? @"NOTIFYING" : @"NOT NOTIFYING", characteristic.UUID.UUIDString];
     
-    if (characteristic == _STATUS_FLAGS && characteristic.isNotifying) {
+    if (characteristic == _STATUS_PASSWORD_VALIDITY && characteristic.isNotifying) {
         // Send password to board
         _isAuthenticating = YES;
     
@@ -807,24 +857,24 @@
 #pragma mark - Utilities
 
 
-
-// Convert Integer to NSData
--(NSData *) IntToNSData:(NSInteger)data
-{
-    Byte byteData[1] = { data & 0xff };
-    return [NSData dataWithBytes:byteData length:1];
-}
-
-- (NSUInteger) getFromBytes:(Byte *) byteData {
-    int dv = byteData[2]-48;
-    int ch = byteData[1]-48;
-    int ngh = byteData[0]-48;
-    
-    NSUInteger value = dv + ch*10 + ngh*100;
-    
-    return value;
-}
-
+//
+//// Convert Integer to NSData
+//-(NSData *) IntToNSData:(NSInteger)data
+//{
+//    Byte byteData[1] = { data & 0xff };
+//    return [NSData dataWithBytes:byteData length:1];
+//}
+//
+//- (NSUInteger) getFromBytes:(Byte *) byteData {
+//    int dv = byteData[2]-48;
+//    int ch = byteData[1]-48;
+//    int ngh = byteData[0]-48;
+//    
+//    NSUInteger value = dv + ch*10 + ngh*100;
+//    
+//    return value;
+//}
+//
 
 - (void)handleRecieveAudioFile: (NSData*)data
                 withPeripheral: (CBPeripheral*)peripheral

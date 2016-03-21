@@ -390,16 +390,16 @@ typedef struct {
         }
         
         // are we subscribed?
-        if (!_STATUS_AUDIO_FILE_PACKET.isNotifying) {
+        if (_STATUS_AUDIO_FILE_PACKET && !_STATUS_AUDIO_FILE_PACKET.isNotifying) {
             [peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_PACKET];
         }
-        if (!_STATUS_AUDIO_FILE_SENT.isNotifying) {
+        if (_STATUS_AUDIO_FILE_STORED && !_STATUS_AUDIO_FILE_STORED.isNotifying) {
+            [peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_STORED];
+        }
+        if (_STATUS_AUDIO_FILE_SENT && !_STATUS_AUDIO_FILE_SENT.isNotifying) {
             [peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_SENT];
         }
-        if (!_STATUS_AUDIO_FILE_SENT.isNotifying) {
-            [peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_SENT];
-        }
-        if (!_STATUS_PASSWORD_VALIDITY.isNotifying) {
+        if (_STATUS_PASSWORD_VALIDITY && !_STATUS_PASSWORD_VALIDITY.isNotifying) {
             [peripheral setNotifyValue:YES forCharacteristic:_STATUS_PASSWORD_VALIDITY];
         }
         
@@ -498,8 +498,12 @@ typedef struct {
     
     _currentPeripheral = peripheral;
     NSData *macData = (NSData*)[_uuidMacMap objectForKey:peripheral.identifier.UUIDString];
-    Byte *mac = (Byte*)macData.bytes;
-    _currentMAC = [NSString stringWithFormat:@"%02x:%02x:%02x:%02x:%02x:%02x", mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]];
+    if (macData) {
+        Byte *mac = (Byte*)macData.bytes;
+        _currentMAC = [NSString stringWithFormat:@"%02x:%02x:%02x:%02x:%02x:%02x", mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]];
+    } else {
+        _currentMAC = @"[No MAC received]";
+    }
     
     peripheral.delegate = self;
     
@@ -662,10 +666,18 @@ typedef struct {
         _STATUS_AUDIO_FILE_STORED = [self getCharacteristic:MYLE_CHAR_STATUS_AUDIO_FILE_STORED forService:service];
         _STATUS_PASSWORD_VALIDITY = [self getCharacteristic:MYLE_CHAR_STATUS_PASSWORD_VALIDITY forService:service];
         
-        [service.peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_PACKET];
-        [service.peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_SENT];
-        [service.peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_STORED];
-        [service.peripheral setNotifyValue:YES forCharacteristic:_STATUS_PASSWORD_VALIDITY];
+        if (_STATUS_AUDIO_FILE_PACKET) {
+            [service.peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_PACKET];
+        }
+        if (_STATUS_AUDIO_FILE_SENT) {
+            [service.peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_SENT];
+        }
+        if (_STATUS_AUDIO_FILE_STORED) {
+            [service.peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_STORED];
+        }
+        if (_STATUS_PASSWORD_VALIDITY) {
+            [service.peripheral setNotifyValue:YES forCharacteristic:_STATUS_PASSWORD_VALIDITY];
+        }
     } else if ([[service UUID] isEqual:[CBUUID UUIDWithString:DEVINFO_SERVICE_UUID]]) {
         _devInfoHardwareRevChrt = [self getCharacteristic:DEVINFO_HARDWARE_REV_UUID forService:service];
         _devInfoFirmwareRevChrt = [self getCharacteristic:DEVINFO_FIRMWARE_REV_UUID forService:service];

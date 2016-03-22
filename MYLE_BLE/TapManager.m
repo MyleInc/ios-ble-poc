@@ -17,13 +17,13 @@
 @end
 
 
-typedef struct {
+typedef struct  __attribute__((packed)) {
     UInt16  fileIndex;
     Byte command;
 } AudioFileDisposition;
 
 
-typedef struct {
+typedef struct  __attribute__((packed)) {
     Byte  version;
     Byte  fileExists;
     Byte  timeValid;

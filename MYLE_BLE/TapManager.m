@@ -743,7 +743,7 @@ typedef struct {
                 [self sendCurrentTime];
                 
                 // check maybe there are files stored in TAP
-                //[_currentPeripheral readValueForCharacteristic:_STATUS_AUDIO_FILE_STORED];
+                [_currentPeripheral readValueForCharacteristic:_STATUS_AUDIO_FILE_STORED];
             }
         }
     }

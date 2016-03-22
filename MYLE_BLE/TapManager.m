@@ -749,15 +749,16 @@ typedef struct {
     }
     else if (characteristic == _STATUS_AUDIO_FILE_STORED)
     {
-        AudioFileStored *metadata = (AudioFileStored*)characteristic.value.bytes;
+        AudioFileStored metadata;
+        [[characteristic value] getBytes:&metadata length:sizeof(metadata)];
         
-        [self trace:@"Received Audio File Strored value:\r\n\tMetadata version: %@\r\n\tFile exists: %@\r\n\tTime and date valid: %@\r\n\tCodec ID: %@\r\n\tSecond: %@\r\n\tMinute: %@\r\n\tHour: %@\r\n\tDay: %@\r\n\tMonth: %@\r\n\tYear: %@\r\n\tFile size: %@\r\n\tPacket size: %@\r\n\tFile index: %@", metadata->version, metadata->fileExists, metadata->timeValid, metadata->codeId, metadata->second, metadata->minute, metadata->hour, metadata->day, metadata->month, metadata->year, metadata->fileSize, metadata->packetSize, metadata->fileIndex];
+        [self trace:@"Received Audio File Strored value:\r\n\tMetadata version: %@\r\n\tFile exists: %@\r\n\tTime and date valid: %@\r\n\tCodec ID: %@\r\n\tSecond: %@\r\n\tMinute: %@\r\n\tHour: %@\r\n\tDay: %@\r\n\tMonth: %@\r\n\tYear: %@\r\n\tFile size: %@\r\n\tPacket size: %@\r\n\tFile index: %@", metadata.version, metadata.fileExists, metadata.timeValid, metadata.codeId, metadata.second, metadata.minute, metadata.hour, metadata.day, metadata.month, metadata.year, metadata.fileSize, metadata.packetSize, metadata.fileIndex];
         
-        if (metadata->fileExists) {
+        if (metadata.fileExists) {
             [self trace:@"File exists on TAP, sending command to initiate file transfer"];
             
             AudioFileDisposition cmd;
-            cmd.fileIndex = metadata->fileIndex;
+            cmd.fileIndex = metadata.fileIndex;
             cmd.command = 0; // transfer file
             
             //_currentFileIndex = metadata->fileIndex;

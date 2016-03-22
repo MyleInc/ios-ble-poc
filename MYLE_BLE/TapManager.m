@@ -645,6 +645,7 @@ typedef struct {
 - (void) initCharacterisitcsForService:(CBService *)service {
     if ([[service UUID] isEqual:[CBUUID UUIDWithString:BATTERY_SERVICE_UUID]]) {
         _batteryLevelChrt = [self getCharacteristic:BATTERY_LEVEL_UUID forService:service];
+        [self trace:@"Subscribing to %@...", _batteryLevelChrt];
         [service.peripheral setNotifyValue:YES forCharacteristic:_batteryLevelChrt];
     } else if ([[service UUID] isEqual:[CBUUID UUIDWithString:MYLE_SERVICE]]) {
         _SETTING_AUDIO_LENGTH = [self getCharacteristic:MYLE_CHAR_SETTING_AUDIO_LENGTH forService:service];
@@ -667,15 +668,19 @@ typedef struct {
         _STATUS_PASSWORD_VALIDITY = [self getCharacteristic:MYLE_CHAR_STATUS_PASSWORD_VALIDITY forService:service];
         
         if (_STATUS_AUDIO_FILE_PACKET) {
+            [self trace:@"Subscribing to %@...", _STATUS_AUDIO_FILE_PACKET];
             [service.peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_PACKET];
         }
         if (_STATUS_AUDIO_FILE_SENT) {
+            [self trace:@"Subscribing to %@...", _STATUS_AUDIO_FILE_SENT];
             [service.peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_SENT];
         }
         if (_STATUS_AUDIO_FILE_STORED) {
+            [self trace:@"Subscribing to %@...", _STATUS_AUDIO_FILE_STORED];
             [service.peripheral setNotifyValue:YES forCharacteristic:_STATUS_AUDIO_FILE_STORED];
         }
         if (_STATUS_PASSWORD_VALIDITY) {
+            [self trace:@"Subscribing to %@...", _STATUS_PASSWORD_VALIDITY];
             [service.peripheral setNotifyValue:YES forCharacteristic:_STATUS_PASSWORD_VALIDITY];
         }
     } else if ([[service UUID] isEqual:[CBUUID UUIDWithString:DEVINFO_SERVICE_UUID]]) {

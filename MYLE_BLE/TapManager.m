@@ -749,21 +749,20 @@ typedef struct {
     }
     else if (characteristic == _STATUS_AUDIO_FILE_STORED)
     {
-        AudioFileStored metadata;
-        [[characteristic value] getBytes:&metadata length:sizeof(metadata)];
+        AudioFileStored *metadata = (AudioFileStored*)characteristic.value.bytes;
         
-        [self trace:@"Received Audio File Strored value:\r\n\tMetadata version: %@\r\n\tFile exists: %@\r\n\tTime and date valid: %@\r\n\tCodec ID: %@\r\n\tSecond: %@\r\n\tMinute: %@\r\n\tHour: %@\r\n\tDay: %@\r\n\tMonth: %@\r\n\tYear: %@\r\n\tFile size: %@\r\n\tPacket size: %@\r\n\tFile index: %@", metadata.version, metadata.fileExists, metadata.timeValid, metadata.codeId, metadata.second, metadata.minute, metadata.hour, metadata.day, metadata.month, metadata.year, metadata.fileSize, metadata.packetSize, metadata.fileIndex];
+        [self trace:@"Received Audio File Stored value:\r\tMetadata version: %d (0x%02x)\r\tFile exists: %d (0x%02x)\r\tTime and date valid: %d (0x%02x)\r\tCodec ID: %d (0x%02x)\r\tSecond: %d (0x%02x)\r\tMinute: %d (0x%02x)\r\tHour: %d (0x%02x)\r\tDay: %d (0x%02x)\r\tMonth: %d (0x%02x)\r\tYear: %d (0x%02x)\r\tFile size: %d (0x%02x)\r\tPacket size: %d (0x%02x)\r\tFile index: %d (0x%02x)", metadata->version, metadata->version, metadata->fileExists, metadata->fileExists, metadata->timeValid, metadata->timeValid, metadata->codeId, metadata->codeId, metadata->second, metadata->second, metadata->minute,metadata->minute, metadata->hour,  metadata->hour, metadata->day, metadata->day, metadata->month, metadata->month, metadata->year, metadata->year, metadata->fileSize, metadata->fileSize, metadata->packetSize, metadata->packetSize, metadata->fileIndex, metadata->fileIndex];
         
-        if (metadata.fileExists) {
-            [self trace:@"File exists on TAP, sending command to initiate file transfer"];
+        if (metadata->fileExists) {
+            [self trace:@"File exists on TAP, sending command to initiate file transfer..."];
             
             AudioFileDisposition cmd;
-            cmd.fileIndex = metadata.fileIndex;
+            cmd.fileIndex = metadata->fileIndex;
             cmd.command = 0; // transfer file
             
             //_currentFileIndex = metadata->fileIndex;
             
-            [_currentPeripheral writeValue:[NSData dataWithBytes:&cmd length:sizeof(AudioFileDisposition)] forCharacteristic:_COMMAND_AUDIO_FILE_DISPOSITION type:CBCharacteristicWriteWithResponse];
+            [_currentPeripheral writeValue:[NSData dataWithBytes:&cmd length:sizeof(cmd)] forCharacteristic:_COMMAND_AUDIO_FILE_DISPOSITION type:CBCharacteristicWriteWithResponse];
         }
     }
     else if (characteristic == _STATUS_AUDIO_FILE_SENT)
@@ -771,7 +770,7 @@ typedef struct {
         UInt32 *fileIndex = (UInt32*)characteristic.value.bytes;
         [self trace:@"Received audio with File Index %@! Sending back Audio File Received command...", *fileIndex];
         
-        [_currentPeripheral writeValue:[NSData dataWithBytes:&fileIndex length:sizeof(UInt32)] forCharacteristic:_COMMAND_AUDIO_FILE_RECEIVED type:CBCharacteristicWriteWithResponse];
+        [_currentPeripheral writeValue:[NSData dataWithBytes:&fileIndex length:sizeof(fileIndex)] forCharacteristic:_COMMAND_AUDIO_FILE_RECEIVED type:CBCharacteristicWriteWithResponse];
     }
     else  if (characteristic == _batteryLevelChrt)
     {

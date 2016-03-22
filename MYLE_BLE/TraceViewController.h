@@ -13,4 +13,6 @@
 
 @property (weak, nonatomic) IBOutlet UITextView *tvLog;
 
+- (IBAction)share:(id)sender;
+
 @end

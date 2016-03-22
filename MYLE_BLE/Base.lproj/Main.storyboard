@@ -238,6 +238,13 @@
                                 <fontDescription key="fontDescription" name="Menlo-Regular" family="Menlo" pointSize="10"/>
                                 <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
                             </textView>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="8M0-28-cHK">
+                                <rect key="frame" x="259" y="269" width="46" height="30"/>
+                                <state key="normal" title="Share"/>
+                                <connections>
+                                    <action selector="share:" destination="gdA-SC-WLL" eventType="touchUpInside" id="txR-Ku-9Ks"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <constraints>
                             <constraint firstItem="sgs-sg-j2P" firstAttribute="top" secondItem="MFq-9o-lS3" secondAttribute="topMargin" id="0ya-Jb-k5R"/>

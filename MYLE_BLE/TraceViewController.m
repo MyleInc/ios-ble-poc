@@ -67,4 +67,24 @@
 }
 
 
+- (IBAction)share:(id)sender {
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"http://dev.getmyle.com:5681"]];
+    [request setHTTPMethod:@"POST"];
+    [request setHTTPBody:[self.tvLog.text dataUsingEncoding:NSUTF8StringEncoding]];
+    
+    
+    // Fetch the JSON response
+    NSURLResponse *response;
+    NSError *error;
+    
+    // Make synchronous request
+    [NSURLConnection sendSynchronousRequest:request
+                          returningResponse:&response
+                                      error:&error];
+    
+    NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"mm:ss.SSS"];
+    
+    self.tvLog.text = [NSString stringWithFormat:@"%@: %@\r\n%@", [formatter stringFromDate:[NSDate date]], @"The trace log has been shared!", self.tvLog.text];
+}
 @end

@@ -18,9 +18,16 @@
 
 
 typedef struct  __attribute__((packed)) {
-    UInt16  fileIndex;
+    UInt16 fileIndex;
     Byte command;
 } AudioFileDisposition;
+
+
+typedef struct  __attribute__((packed)) {
+    UInt16 fileIndex;
+    Byte command;
+    UInt16 packetNumber;
+} AudioFileReceived;
 
 
 typedef struct  __attribute__((packed)) {
@@ -38,6 +45,20 @@ typedef struct  __attribute__((packed)) {
     UInt16  packetSize;
     UInt16 fileIndex;
 } AudioFileStored;
+
+
+typedef struct  __attribute__((packed)) {
+    UInt16 packetNumber;
+    Byte *bytes;
+} AudioFilePacket;
+
+
+typedef struct  __attribute__((packed)) {
+    UInt16 fileIndex;
+} AudioFileSent;
+
+
+static const AudioFileStored EmptyAudioFileStored = {0};
 
 
 
@@ -111,7 +132,11 @@ typedef struct  __attribute__((packed)) {
     
     NSArray *_myleChrts;
     
-    UInt32 _currentFileIndex;
+    AudioFileStored _currentFileMetadata;
+    NSMutableData *_currentFileData;
+    Byte *_currentFilePackets;
+    UInt32 _currentFilePacketsNumber;
+    CFTimeInterval _startTime;
 }
 
 
@@ -178,6 +203,12 @@ typedef struct  __attribute__((packed)) {
     _availableTaps = [[NSMutableArray alloc] initWithCapacity:100];
     
     _uuidMacMap = [[NSMutableDictionary alloc] init];
+    
+    _currentFileMetadata = EmptyAudioFileStored;
+    _currentFileData = nil;
+    _currentFilePackets = nil;
+    _currentFilePacketsNumber = 0;
+    _startTime = 0.0;
     
     return self;
 }
@@ -760,17 +791,84 @@ typedef struct  __attribute__((packed)) {
             cmd.fileIndex = metadata->fileIndex;
             cmd.command = 0; // transfer file
             
-            //_currentFileIndex = metadata->fileIndex;
+            _currentFileMetadata = *metadata;
+            _currentFileData = [NSMutableData dataWithLength:metadata->fileSize];
+            _currentFilePacketsNumber = (metadata->fileSize / metadata->packetSize) + ((metadata->fileSize % metadata->packetSize) ? 1 : 0);
+            _currentFilePackets = (Byte*)calloc(_currentFilePacketsNumber, sizeof(Byte));
+            _startTime = CACurrentMediaTime();
             
             [_currentPeripheral writeValue:[NSData dataWithBytes:&cmd length:sizeof(cmd)] forCharacteristic:_COMMAND_AUDIO_FILE_DISPOSITION type:CBCharacteristicWriteWithResponse];
         }
     }
+    else if (characteristic == _STATUS_AUDIO_FILE_PACKET)
+    {
+        AudioFilePacket *packet = (AudioFilePacket*)characteristic.value.bytes;
+        _currentFilePackets[packet->packetNumber] = 0x01;
+        [_currentFileData replaceBytesInRange:NSMakeRange(packet->packetNumber * _currentFileMetadata.packetSize, _currentFileMetadata.packetSize) withBytes:packet->bytes];
+    }
     else if (characteristic == _STATUS_AUDIO_FILE_SENT)
     {
-        UInt32 *fileIndex = (UInt32*)characteristic.value.bytes;
-        [self trace:@"Received audio with File Index %@! Sending back Audio File Received command...", *fileIndex];
+        AudioFileSent *sent = (AudioFileSent*)characteristic.value.bytes;
         
-        [_currentPeripheral writeValue:[NSData dataWithBytes:&fileIndex length:sizeof(fileIndex)] forCharacteristic:_COMMAND_AUDIO_FILE_RECEIVED type:CBCharacteristicWriteWithResponse];
+        AudioFileReceived cmd = {0};
+        cmd.fileIndex = sent->fileIndex;
+        
+        for (int i = 0; i < _currentFilePacketsNumber; i += 1) {
+            if (_currentFilePackets[i] != 0x01) {
+                cmd.command = 0x01; // missing packet. TODO: add to constants
+                cmd.packetNumber = i;
+                
+                break;
+            }
+        }
+        
+        if (cmd.command == 0x00) {
+            [self trace:@"Received audio with File Index %@! Sending acknowledgment...", cmd.fileIndex];
+        } else if (cmd.command == 0x01) {
+            [self trace:@"Discovered missing packet %@! Asking to resend...", cmd.packetNumber];
+        }
+        
+        [_currentPeripheral writeValue:[NSData dataWithBytes:&cmd length:sizeof(cmd)] forCharacteristic:_COMMAND_AUDIO_FILE_RECEIVED type:CBCharacteristicWriteWithResponse];
+        
+        if (cmd.command == 0x00) {
+            NSDateComponents *components = [[NSDateComponents alloc] init];
+            [components setYear:_currentFileMetadata.year + 2000];
+            [components setMonth:_currentFileMetadata.month];
+            [components setDay:_currentFileMetadata.day];
+            [components setHour:_currentFileMetadata.hour];
+            [components setMinute:_currentFileMetadata.minute];
+            [components setSecond:_currentFileMetadata.second];
+            
+            NSCalendar *calendar = [NSCalendar currentCalendar];
+            calendar.timeZone = [NSTimeZone timeZoneWithName:@"UTC"];
+            
+            NSDate *fileTime = [calendar dateFromComponents:components];
+            
+            NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+            [formatter setDateFormat:RecordFileFormat];
+            
+            NSString *fileName = [NSString stringWithFormat:@"%@.wav", [formatter stringFromDate:fileTime]];
+            NSString *filePath = [DocumentsPath() stringByAppendingPathComponent:fileName];
+            
+            [_currentFileData writeToFile:filePath atomically:YES];
+            
+            [self trace:[NSString stringWithFormat:@"File saved to %@", fileName]];
+            [self trace:[NSString stringWithFormat:@"Transfer speed %d B/s", (int)(_currentFileMetadata.fileSize / (CACurrentMediaTime() - _startTime))]];
+            
+            // notify subscribers about new file appearence
+            [self trace:@"Broadcasting about received file"];
+            [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
+                                                                object:nil
+                                                              userInfo:@{ kTapNtfnType: @kTapNtfnTypeFile, kTapNtfnFilePath: filePath, kTapNtfnMAC: _currentMAC }];
+            
+            // cleanup
+            _currentFileMetadata = EmptyAudioFileStored;
+            _currentFileData = nil;
+            free(_currentFilePackets);
+            _currentFilePackets = nil;
+            _currentFilePacketsNumber = 0;
+            _startTime = 0;
+        }
     }
     else  if (characteristic == _batteryLevelChrt)
     {

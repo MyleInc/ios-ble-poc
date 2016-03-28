@@ -804,7 +804,8 @@ static const AudioFileStored EmptyAudioFileStored = {0};
     {
         AudioFilePacket *packet = (AudioFilePacket*)characteristic.value.bytes;
         _currentFilePackets[packet->packetNumber] = 0x01;
-        [_currentFileData replaceBytesInRange:NSMakeRange(packet->packetNumber * _currentFileMetadata.packetSize, _currentFileMetadata.packetSize) withBytes:packet->bytes];
+        UInt16 dataSize = _currentFileMetadata.packetSize - sizeof(packet->packetNumber);
+        [_currentFileData replaceBytesInRange:NSMakeRange(packet->packetNumber * dataSize, dataSize) withBytes:&packet->bytes];
     }
     else if (characteristic == _STATUS_AUDIO_FILE_SENT)
     {

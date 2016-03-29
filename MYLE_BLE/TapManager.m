@@ -793,11 +793,9 @@ static const AudioFileStored EmptyAudioFileStored = {0};
             
             _currentFileMetadata = *metadata;
             
-            AudioFilePacket p; // just to calculate packetNumber field size
-            UInt16 dataSize = _currentFileMetadata.packetSize - sizeof(p.packetNumber);
+            UInt16 dataSize = _currentFileMetadata.packetSize - sizeof((AudioFilePacket*)0)->packetNumber;
             _currentFilePacketsNumber = (metadata->fileSize / dataSize) + ((metadata->fileSize % dataSize) ? 1 : 0);
-            //_currentFileData = [NSMutableData dataWithLength:metadata->fileSize];
-            _currentFileData = [NSMutableData dataWithLength:(_currentFilePacketsNumber * dataSize)]; // TODO: just to fill latest packet with zeors, should be calculated properly
+            _currentFileData = [NSMutableData dataWithLength:metadata->fileSize];
             _currentFilePackets = (Byte*)calloc(_currentFilePacketsNumber, sizeof(Byte));
             _startTime = CACurrentMediaTime();
             
@@ -808,8 +806,12 @@ static const AudioFileStored EmptyAudioFileStored = {0};
     {
         AudioFilePacket *packet = (AudioFilePacket*)characteristic.value.bytes;
         _currentFilePackets[packet->packetNumber] = 0x01;
-        UInt16 dataSize = _currentFileMetadata.packetSize - sizeof(packet->packetNumber);
-        [_currentFileData replaceBytesInRange:NSMakeRange(packet->packetNumber * dataSize, dataSize) withBytes:&packet->bytes];
+        UInt16 maxDataSize = _currentFileMetadata.packetSize - sizeof(packet->packetNumber);
+        // calculate dat size in current packet taking care that the last packet can have smaller data
+        UInt16 dataSize = (_currentFilePacketsNumber - 1 == packet->packetNumber)
+            ? _currentFileMetadata.fileSize - packet->packetNumber * maxDataSize
+            : maxDataSize;
+        [_currentFileData replaceBytesInRange:NSMakeRange(packet->packetNumber * maxDataSize, dataSize) withBytes:&packet->bytes];
     }
     else if (characteristic == _STATUS_AUDIO_FILE_SENT)
     {

@@ -135,7 +135,7 @@ static const AudioFileStored EmptyAudioFileStored = {0};
     AudioFileStored _currentFileMetadata;
     NSMutableData *_currentFileData;
     Byte *_currentFilePackets;
-    UInt32 _currentFilePacketsNumber;
+    UInt16 _currentFilePacketsNumber;
     CFTimeInterval _startTime;
 }
 
@@ -792,8 +792,12 @@ static const AudioFileStored EmptyAudioFileStored = {0};
             cmd.command = 0; // transfer file
             
             _currentFileMetadata = *metadata;
-            _currentFileData = [NSMutableData dataWithLength:metadata->fileSize];
-            _currentFilePacketsNumber = (metadata->fileSize / metadata->packetSize) + ((metadata->fileSize % metadata->packetSize) ? 1 : 0);
+            
+            AudioFilePacket p; // just to calculate packetNumber field size
+            UInt16 dataSize = _currentFileMetadata.packetSize - sizeof(p.packetNumber);
+            _currentFilePacketsNumber = (metadata->fileSize / dataSize) + ((metadata->fileSize % dataSize) ? 1 : 0);
+            //_currentFileData = [NSMutableData dataWithLength:metadata->fileSize];
+            _currentFileData = [NSMutableData dataWithLength:(_currentFilePacketsNumber * dataSize)]; // TODO: just to fill latest packet with zeors, should be calculated properly
             _currentFilePackets = (Byte*)calloc(_currentFilePacketsNumber, sizeof(Byte));
             _startTime = CACurrentMediaTime();
             
@@ -814,7 +818,7 @@ static const AudioFileStored EmptyAudioFileStored = {0};
         AudioFileReceived cmd = {0};
         cmd.fileIndex = sent->fileIndex;
         
-        for (int i = 0; i < _currentFilePacketsNumber; i += 1) {
+        for (UInt16 i = 0; i < _currentFilePacketsNumber; i += 1) {
             if (_currentFilePackets[i] != 0x01) {
                 cmd.command = 0x01; // missing packet. TODO: add to constants
                 cmd.packetNumber = i;
@@ -824,9 +828,9 @@ static const AudioFileStored EmptyAudioFileStored = {0};
         }
         
         if (cmd.command == 0x00) {
-            [self trace:@"Received audio with File Index %@! Sending acknowledgment...", cmd.fileIndex];
+            [self trace:@"Received audio with File Index %d! Sending acknowledgment...", cmd.fileIndex];
         } else if (cmd.command == 0x01) {
-            [self trace:@"Discovered missing packet %@! Asking to resend...", cmd.packetNumber];
+            [self trace:@"Discovered missing packet %d! Asking to resend...", cmd.packetNumber];
         }
         
         [_currentPeripheral writeValue:[NSData dataWithBytes:&cmd length:sizeof(cmd)] forCharacteristic:_COMMAND_AUDIO_FILE_RECEIVED type:CBCharacteristicWriteWithResponse];

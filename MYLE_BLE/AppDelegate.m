@@ -16,9 +16,27 @@
 
 @implementation AppDelegate
 
+- (void)onTapNotification:(NSNotification *)notification
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        int type = ((NSNumber*)notification.userInfo[@kTapNtfnTypeFile]).intValue;
+        if (type == kTapNtfnTypeFile) {
+            NSString *filePath = notification.userInfo[kTapNtfnFilePath];
+            NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+            [defaults setValue:filePath forKey:@"LAST_RECEIVED_FILE_PATH"];
+            [defaults synchronize];
+        }
+    });
+}
+
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
     [Fabric with:@[CrashlyticsKit]];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(onTapNotification:)
+                                                 name:kTapNtfn
+                                               object:nil];
 
     return YES;
 }

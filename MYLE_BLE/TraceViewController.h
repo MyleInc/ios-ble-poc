@@ -15,4 +15,6 @@
 
 - (IBAction)share:(id)sender;
 
+- (IBAction)play:(id)sender;
+
 @end

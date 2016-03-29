@@ -815,6 +815,11 @@ static const AudioFileStored EmptyAudioFileStored = {0};
     }
     else if (characteristic == _STATUS_AUDIO_FILE_SENT)
     {
+        if (_currentFilePacketsNumber == 0) {
+            [self trace:@"Received Audio File Sent notification without active file transfer..."];
+            return;
+        }
+        
         AudioFileSent *sent = (AudioFileSent*)characteristic.value.bytes;
         
         AudioFileReceived cmd = {0};

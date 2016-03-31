@@ -19,7 +19,7 @@
 - (void)onTapNotification:(NSNotification *)notification
 {
     dispatch_async(dispatch_get_main_queue(), ^{
-        int type = ((NSNumber*)notification.userInfo[@kTapNtfnTypeFile]).intValue;
+        int type = ((NSNumber*)notification.userInfo[kTapNtfnType]).intValue;
         if (type == kTapNtfnTypeFile) {
             NSString *filePath = notification.userInfo[kTapNtfnFilePath];
             NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];

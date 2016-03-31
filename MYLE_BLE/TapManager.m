@@ -8,7 +8,6 @@
 
 #import "TapManager.h"
 #import "TapServices.h"
-#define CREDITBLE ((int) 423)
 
 
 @interface TapManager()
@@ -106,22 +105,6 @@ static const AudioFileStored EmptyAudioFileStored = {0};
     BOOL _isConnected;
     
     NSMutableArray *_availableTaps;
-    
-    RECEIVE_MODE _receiveMode;
-    
-    NSMutableData *_audioBuffer;
-    unsigned int _audioLength;
-    unsigned int _audioRecordedTime;
-    
-    NSMutableData *_logBuffer;
-    unsigned int _logLength;
-    unsigned int _logCreatedTime;
-    
-    Boolean _isVerified;
-    Boolean _isDropListSetVisible;
-    Boolean _isDropListReadVisible;
-    Boolean _isReceivingAudioFile;
-    Boolean _isReceivingLogFile;
     
     NSMutableArray *_readParameterListeners;
     NSMutableArray *_traceListeners;
@@ -585,11 +568,6 @@ static const AudioFileStored EmptyAudioFileStored = {0};
     _currentMAC = nil;
     _currentPeripheral = nil;
     _progress = 0;
-    _audioLength = 0;
-    _isReceivingAudioFile = false;
-    _logLength = 0;
-    _isReceivingLogFile = false;
-    _receiveMode = RECEIVE_NONE;
     _isConnected = NO;
     _isAuthenticating = NO;
     
@@ -750,15 +728,13 @@ static const AudioFileStored EmptyAudioFileStored = {0};
         return [self trace:@"Error updating value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
     }
     
-    [self trace:@"[>] Received in charc %@:\r\n%@", (characteristic.UUID.UUIDString.length >= 8) ? [characteristic.UUID.UUIDString substringToIndex:8] : characteristic.UUID.UUIDString, characteristic.value];
-    
     Byte *bytes = (Byte*)(characteristic.value.bytes);
 
     if (characteristic == _STATUS_PASSWORD_VALIDITY)
     {
         // if we are in the middle of authentication, and received password status flag set to 1, then we are authenticated
         if (_isAuthenticating) {
-            if (((Byte*)characteristic.value.bytes)[0] & 0x01) {
+            if (bytes[0] & 0x01) {
                 [self trace:@"Password is OK!"];
                 
                 _isAuthenticating = NO;
@@ -780,7 +756,7 @@ static const AudioFileStored EmptyAudioFileStored = {0};
     }
     else if (characteristic == _STATUS_AUDIO_FILE_STORED)
     {
-        AudioFileStored *metadata = (AudioFileStored*)characteristic.value.bytes;
+        AudioFileStored *metadata = (AudioFileStored*)bytes;
         
         [self trace:@"Received Audio File Stored value:\r\tMetadata version: %d (0x%02x)\r\tFile exists: %d (0x%02x)\r\tTime and date valid: %d (0x%02x)\r\tCodec ID: %d (0x%02x)\r\tSecond: %d (0x%02x)\r\tMinute: %d (0x%02x)\r\tHour: %d (0x%02x)\r\tDay: %d (0x%02x)\r\tMonth: %d (0x%02x)\r\tYear: %d (0x%02x)\r\tFile size: %d (0x%02x)\r\tPacket size: %d (0x%02x)\r\tFile index: %d (0x%02x)", metadata->version, metadata->version, metadata->fileExists, metadata->fileExists, metadata->timeValid, metadata->timeValid, metadata->codeId, metadata->codeId, metadata->second, metadata->second, metadata->minute,metadata->minute, metadata->hour,  metadata->hour, metadata->day, metadata->day, metadata->month, metadata->month, metadata->year, metadata->year, metadata->fileSize, metadata->fileSize, metadata->packetSize, metadata->packetSize, metadata->fileIndex, metadata->fileIndex];
         
@@ -804,7 +780,7 @@ static const AudioFileStored EmptyAudioFileStored = {0};
     }
     else if (characteristic == _STATUS_AUDIO_FILE_PACKET)
     {
-        AudioFilePacket *packet = (AudioFilePacket*)characteristic.value.bytes;
+        AudioFilePacket *packet = (AudioFilePacket*)bytes;
         _currentFilePackets[packet->packetNumber] = 0x01;
         UInt16 maxDataSize = _currentFileMetadata.packetSize - sizeof(packet->packetNumber);
         // calculate dat size in current packet taking care that the last packet can have smaller data
@@ -820,7 +796,7 @@ static const AudioFileStored EmptyAudioFileStored = {0};
             return;
         }
         
-        AudioFileSent *sent = (AudioFileSent*)characteristic.value.bytes;
+        AudioFileSent *sent = (AudioFileSent*)bytes;
         
         AudioFileReceived cmd = {0};
         cmd.fileIndex = sent->fileIndex;
@@ -919,44 +895,6 @@ static const AudioFileStored EmptyAudioFileStored = {0};
     {
         [self notifyReadParameterListeners:@"HWVERSION" intValue:0 strValue:[[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding]];
     }
-    
-
-
-    
-//    if (error) {
-//        return [self trace:@"Error updating value for characteristic %@: %@", characteristic.UUID.UUIDString, error];
-//    } else {
-//        [self trace:@"[>] Received in charc %@:\r\n%@", (characteristic.UUID.UUIDString.length >= 8) ? [characteristic.UUID.UUIDString substringToIndex:8] :characteristic.UUID.UUIDString, characteristic.value];
-//    }
-//    
-//    // Readback of the battery level
-//    if (characteristic == _batteryLevelChrt) {
-//        [self readBatteryLevel:characteristic.value];
-//    }
-//    
-//    // Not correct characteristics
-//    if (characteristic != _myleReadChrt) {
-//        return;
-//    }
-//    
-//    /*********** RECEIVE PARAMETER VALUE ***************/
-//    if (!_isReceivingAudioFile && !_isReceivingLogFile) {
-//        if([self readParameter:characteristic.value]) { return; }
-//    }
-//    
-//    /*********** RECEIVE AUDIO FILE OR LOG FILE ********************/
-//    
-//    if (_receiveMode == RECEIVE_AUDIO_FILE) {
-//        [self handleRecieveAudioFile: characteristic.value
-//                      withPeripheral: peripheral
-//                    withChararistics: characteristic];
-//        
-//    } else if (_receiveMode == RECEIVE_LOG_FILE) {
-//        // Send back to peripheral number of bytes received.
-//        [self handleRecieveLogFile: characteristic.value
-//                    withPeripheral: peripheral
-//                  withChararistics: characteristic];
-//    }
 }
 
 
@@ -984,207 +922,12 @@ static const AudioFileStored EmptyAudioFileStored = {0};
 #pragma mark - Utilities
 
 
-//
-//// Convert Integer to NSData
-//-(NSData *) IntToNSData:(NSInteger)data
-//{
-//    Byte byteData[1] = { data & 0xff };
-//    return [NSData dataWithBytes:byteData length:1];
-//}
-//
-//- (NSUInteger) getFromBytes:(Byte *) byteData {
-//    int dv = byteData[2]-48;
-//    int ch = byteData[1]-48;
-//    int ngh = byteData[0]-48;
-//    
-//    NSUInteger value = dv + ch*10 + ngh*100;
-//    
-//    return value;
-//}
-//
-
-- (void)handleRecieveAudioFile: (NSData*)data
-                withPeripheral: (CBPeripheral*)peripheral
-              withChararistics: (CBCharacteristic*)characteristic {
-    
-//    static CFTimeInterval startTime = 0;
-//    
-//    if (_audioLength == 0) // First packet
-//    {
-//        unsigned int ml;
-//        
-//        [characteristic.value getBytes:&ml length:4];
-//        [self trace:[NSString stringWithFormat:@"Read record metadata: metadata length = %d", ml]];
-//        
-//        [characteristic.value getBytes:&_audioLength range:NSMakeRange(4, 4)];
-//        [self trace:[NSString stringWithFormat:@"Read record metadata: audio length = %d", _audioLength]];
-//        
-//        [characteristic.value getBytes:&_audioRecordedTime range:NSMakeRange(8, 4)];
-//        
-//        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-//        [formatter setDateFormat:TimeFormat];
-//        [self trace:[NSString stringWithFormat:@"Read record metadata: record time = %@", [formatter stringFromDate:[self getDateFromInt:_audioRecordedTime]]]];
-//        
-//        [self trace:@"Receiving audio data..."];
-//        
-//        _audioBuffer = [[NSMutableData alloc] init];
-//        _isReceivingAudioFile = true;
-//        _progress = 0;
-//        
-//        NSInteger numBytes = CREDITBLE;
-//        Byte byteData[2] = { numBytes & 0xff, numBytes >> 8 };
-//        NSData *data2 = [NSData dataWithBytes:byteData length:2];
-//        
-//        [self writeValue:data2 forCharc:_myleWriteChrt];
-//        
-//        startTime = CACurrentMediaTime();
-//        
-//    }
-//    else if (_audioBuffer.length < _audioLength)
-//    {
-//        static NSInteger numBytesTransfered = 0;
-//        
-//        [_audioBuffer appendData:characteristic.value];
-//        
-//        float currentProgress = (float)_audioBuffer.length / (float)_audioLength;
-//        if (fabsf(currentProgress - _progress) >= PROGRESS_LOG_DELTA || _audioBuffer.length == _audioLength) {
-//            _progress = currentProgress;
-//            [self trace:@"Received %d%%", (int)(_progress * 100.0f)];
-//        }
-//        
-//        if (_audioBuffer.length >= _audioLength)
-//        {
-//            CFTimeInterval elapsedTime = CACurrentMediaTime() - startTime;
-//            
-//            NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-//            [formatter setDateFormat:RecordFileFormat];
-//            NSString *fileName = [NSString stringWithFormat:@"%@.wav", [formatter stringFromDate:[self getDateFromInt:_audioRecordedTime]]];
-//            NSString *filePath = [DocumentsPath() stringByAppendingPathComponent:fileName];
-//            
-//            [_audioBuffer writeToFile:filePath atomically:YES];
-//            
-//            [self trace:[NSString stringWithFormat:@"Audio saved to %@", fileName]];
-//            [self trace:[NSString stringWithFormat:@"Transfer speed %d B/s", (int)(_audioLength/elapsedTime)]];
-//            
-//            // reset
-//            _audioLength = 0;
-//            _progress = 0;
-//            _isReceivingAudioFile = false;
-//            _receiveMode = RECEIVE_NONE;
-//            
-//            // notify subscribers about new file appearence
-//            [self trace:@"Broadcasting about received file"];
-//            [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
-//                                                                object:nil
-//                                                              userInfo:@{ kTapNtfnType: @kTapNtfnTypeFile, kTapNtfnFilePath: filePath, kTapNtfnMAC: _currentMAC }];
-//        }
-//        else{
-//            
-//            numBytesTransfered += characteristic.value.length;
-//            
-//            NSInteger numBytes = CREDITBLE;
-//            if(_audioLength - _audioBuffer.length < CREDITBLE)
-//            {
-//                numBytes = _audioLength - _audioBuffer.length;
-//            }
-//            
-//            if(numBytesTransfered >= numBytes)
-//            {
-//                numBytesTransfered = 0;
-//                Byte byteData[2] = { numBytes & 0xff, numBytes >> 8 };
-//                NSData *data2 = [NSData dataWithBytes:byteData length:2];
-//                [self writeValue:data2 forCharc:_myleWriteChrt];
-//            }
-//        }
-//    }
-}
-
-
-- (void)handleRecieveLogFile: (NSData*)data
-              withPeripheral: (CBPeripheral*)peripheral
-            withChararistics: (CBCharacteristic*)characteristic {
-    
-//    static NSInteger numBytesTransfered = 0;
-//    static unsigned int fileLength = 0;
-//    
-//    // perform some action
-//    if (_logLength == 0) // First packet
-//    {
-//        unsigned int ml;
-//        
-//        [data getBytes:&ml length:4];
-//        [self trace:[NSString stringWithFormat:@"Log metadata: metadata length = %d", ml]];
-//        
-//        [data getBytes:&_logLength range:NSMakeRange(4, 4)];
-//        [self trace:[NSString stringWithFormat:@"Log metadata: log length = %d", _logLength]];
-//        
-//        [data getBytes:&_logCreatedTime range:NSMakeRange(8, 4)];
-//        
-//        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-//        [formatter setDateFormat:TimeFormat];
-//        [self trace:[NSString stringWithFormat:@"Log metadata: created time = %@", [formatter stringFromDate:[self getDateFromInt:_logCreatedTime]]]];
-//        
-//        [self trace:@"Receiving log data ..."];
-//        
-//        _logBuffer = [[NSMutableData alloc] init];
-//        _isReceivingLogFile = true;
-//        NSInteger numBytes = 235;
-//        NSData *data = [self IntToNSData:numBytes];
-//        [self writeValue:data forCharc:_myleWriteChrt];
-//    }
-//    else if (_logBuffer.length < _logLength)
-//    {
-//        [_logBuffer appendData:data];
-//        
-//        if (_logBuffer.length >= _logLength)
-//        {
-//            NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-//            [formatter setDateFormat:RecordFileFormat];
-//            NSString *fileName = [NSString stringWithFormat:@"%@.log", [formatter stringFromDate:[self getDateFromInt:_logCreatedTime]]];
-//            
-//            NSString *filePath = [DocumentsPath() stringByAppendingPathComponent:fileName];
-//            [_logBuffer writeToFile:filePath atomically:YES];
-//            
-//            [self trace:[NSString stringWithFormat:@"Log saved to %@", fileName]];
-//            
-//            // Reset
-//            _logLength = 0;
-//            _isReceivingLogFile = false;
-//            _receiveMode = RECEIVE_NONE;
-//        }
-//        else{
-//            
-//            numBytesTransfered += characteristic.value.length;
-//            fileLength += numBytesTransfered;
-//            
-//            NSInteger numBytes = 235;
-//            if(_logLength - _logBuffer.length < 235)
-//            {
-//                numBytes = _logLength - _logBuffer.length;
-//            }
-//            
-//            if(numBytesTransfered >= numBytes)
-//            {
-//                numBytesTransfered = 0;
-//                NSData *data = [self IntToNSData:numBytes];
-//                [self writeValue:data forCharc:_myleWriteChrt];
-//            }
-//        }
-//    }
-}
-
-
 - (void) writeValue:(NSData *)value forCharc:(CBCharacteristic*)charc
 {
     [self trace:@"[<] Sent to charc %@:\r\n%@", (charc.UUID.UUIDString.length >= 8) ? [charc.UUID.UUIDString substringToIndex:8] : charc.UUID.UUIDString, value];
     [_currentPeripheral writeValue:value forCharacteristic:charc type:CBCharacteristicWriteWithResponse];
 }
 
-
-- (void) sendParameter: (NSData *) data
-{
-    //[self writeValue:data forCharc:_myleWriteChrt];
-}
 
 
 - (void)sendPassword:(NSString*)password {
@@ -1403,32 +1146,6 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 }
 
 
-/****** UTILITY FUNCTIONS *************/
-
-
--(NSDate*)getDateFromInt:(unsigned int)l
-{
-    NSDateComponents *c = [[NSCalendar currentCalendar] components:NSUIntegerMax fromDate:[NSDate date]];
-    [c setSecond:((l & 0x1f) * 2)];
-    l = l >> 5;
-    
-    [c setMinute:l & 0x3f];
-    l = l >> 6;
-    
-    [c setHour:l & 0x1f];
-    l = l >> 5;
-    
-    [c setDay:l & 0x1f];
-    l = l >> 5;
-    
-    [c setMonth:l & 0xf];
-    l = l >> 4;
-    
-    [c setYear:(l & 0x7f)];
-    
-    NSCalendar *cal = [NSCalendar currentCalendar];
-    return [cal dateFromComponents:c];
-}
 
 
 

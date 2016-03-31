@@ -1146,6 +1146,19 @@ NSMutableData* getParameterDataFromString(NSString *p, NSString *v) {
 }
 
 
+- (NSString*)getPeripheralName:(CBPeripheral*)peripheral
+{
+    NSData *macData = (NSData*)[_uuidMacMap objectForKey:peripheral.identifier.UUIDString];
+    if (macData) {
+        Byte *mac = (Byte*)macData.bytes;
+        return [NSString stringWithFormat:@"MYLE %02x:%02x:%02x:%02x:%02x:%02x", mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]];
+    } else {
+        return @"MYLE XXXX";
+    }
+
+}
+
+
 
 
 

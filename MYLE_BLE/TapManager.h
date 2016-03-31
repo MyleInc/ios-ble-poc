@@ -60,6 +60,9 @@ typedef void (^TraceListener)(NSString*);
 // Looks up for an available peripheral with given UUID
 - (CBPeripheral*)getPeripheralByUUID:(NSString*)uuid;
 
+// Returns name of given peripheral
+- (NSString*)getPeripheralName:(CBPeripheral*)peripheral;
+
 // Connects to a peripheral with given pass
 - (void)connect: (CBPeripheral*)peripheral pass:(NSString*)pass;
 

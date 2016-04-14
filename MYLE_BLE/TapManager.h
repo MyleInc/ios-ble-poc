@@ -31,14 +31,6 @@ typedef void (^TraceListener)(NSString*);
 #define PROGRESS_LOG_DELTA              0.1f
 
 
-typedef enum _RECEIVE_MODE RECEIVE_MODE;
-enum _RECEIVE_MODE {
-    RECEIVE_AUDIO_FILE = 30,
-    RECEIVE_LOG_FILE,
-    RECEIVE_NONE
-};
-
-
 @interface TapManager : NSObject <CBCentralManagerDelegate, CBPeripheralDelegate>
 
 // Sets up tap manager with TAP UUID and password from last session
@@ -56,6 +48,9 @@ enum _RECEIVE_MODE {
 // Returns password of current or last connected TAP
 - (NSString*)getCurrentTapPassword;
 
+// Returns MAC of current or last connected TAP
+- (NSString*)getCurrentTapMAC;
+
 // Forgets current TAP UUID and password
 - (void)forgetCurrent;
 
@@ -65,11 +60,20 @@ enum _RECEIVE_MODE {
 // Looks up for an available peripheral with given UUID
 - (CBPeripheral*)getPeripheralByUUID:(NSString*)uuid;
 
+// Returns name of given peripheral
+- (NSString*)getPeripheralName:(CBPeripheral*)peripheral;
+
 // Connects to a peripheral with given pass
 - (void)connect: (CBPeripheral*)peripheral pass:(NSString*)pass;
 
 // Disconnects currently connected peripheral
 - (void)disconnect;
+
+// Sends a command to tap to make some noise
+- (void)locate;
+
+// Resets tap to factory defaults
+- (void)resetToFactoryDefaults;
 
 // Start scan
 - (void)startScan;
@@ -86,22 +90,21 @@ enum _RECEIVE_MODE {
 // Adds a listener for trace messafes
 - (void)addTraceListener:(TraceListener)listener;
 
-- (void)sendWriteRECLN:(NSString *)value;
-- (void)sendWritePAUSELEVEL:(NSString *)value;
-- (void)sendWritePAUSELEN:(NSString *)value;
-- (void)sendWriteACCELERSENS:(NSString *)value;
-- (void)sendWriteMIC:(NSString *)value;
-- (void)sendWriteBTLOC:(NSString *)value;
+- (void)sendWriteRECLN:(Byte)value;
+- (void)sendWriteMIC:(Byte)value;
+- (void)sendWritePAUSELEVEL:(Byte)value;
+- (void)sendWritePAUSELEN:(Byte)value;
+- (void)sendWriteACCELERSENS:(Byte)value;
 - (void)sendWritePASSWORD:(NSString *)value;
 
 - (void)sendReadRECLN;
-- (void)sendReadBTLOC;
-- (void)sendReadMAC;
+- (void)sendReadMIC;
 - (void)sendReadPAUSELEVEL;
 - (void)sendReadPAUSELEN;
 - (void)sendReadACCELERSENS;
-- (void)sendReadMIC;
-- (void)sendReadVERSION;
+- (void)sendReadPASSWORD;
 - (void)sendReadBATTERY_LEVEL;
+- (void)sendReadFirmwareVersion;
+- (void)sendReadHardwareVersion;
 
 @end

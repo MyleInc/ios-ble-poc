@@ -81,15 +81,14 @@
     CBPeripheral *peripheral = [[_tap getAvailableTaps] objectAtIndex:indexPath.section];
     BOOL connected = [[_tap getCurrentTapUUID] isEqualToString:peripheral.identifier.UUIDString] && [_tap isConnected];
     
-    cell.lbName.text = peripheral.name;
-    cell.lbUUID.text = peripheral.identifier.UUIDString;
+    cell.lbName.text = [_tap getPeripheralName:peripheral];
     
     if (connected) {
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
         cell.userInteractionEnabled = NO;
         cell.lbName.enabled = NO;
         cell.lbUUID.enabled = NO;
-        cell.lbName.text = [NSString stringWithFormat:@"%@ (connected)", cell.lbName.text];
+        cell.lbUUID.text = @"connected";
     }
     
     return cell;

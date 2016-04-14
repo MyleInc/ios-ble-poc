@@ -1,0 +1,3 @@
+[submodule "ble-ios"]
+	path = ble-ios
+	url = https://github.com/GetMyle/ble-ios.git

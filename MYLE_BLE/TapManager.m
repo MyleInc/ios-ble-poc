@@ -10,6 +10,7 @@
 #import "TapServices.h"
 
 
+
 @interface TapManager()
 - (void) notifyReadParameterListeners:(NSString*)parameterName intValue:(NSUInteger)intValue strValue:(NSString*) strValue;
 - (void) trace:(NSString*)formatString, ...;
@@ -109,7 +110,7 @@ static const AudioFileStored EmptyAudioFileStored = {0};
     NSMutableArray *_readParameterListeners;
     NSMutableArray *_traceListeners;
     
-    float _progress;
+    double _progress;
     
     NSMutableDictionary *_uuidMacMap;
     
@@ -119,6 +120,8 @@ static const AudioFileStored EmptyAudioFileStored = {0};
     NSMutableData *_currentFileData;
     Byte *_currentFilePackets;
     UInt16 _currentFilePacketsNumber;
+    UInt16 _missingPacketsCount;
+    UInt16 _receivedPacketsCount;
     CFTimeInterval _startTime;
 }
 
@@ -191,6 +194,8 @@ static const AudioFileStored EmptyAudioFileStored = {0};
     _currentFileData = nil;
     _currentFilePackets = nil;
     _currentFilePacketsNumber = 0;
+    _missingPacketsCount = 0;
+    _receivedPacketsCount = 0;
     _startTime = 0.0;
     
     return self;
@@ -773,6 +778,8 @@ static const AudioFileStored EmptyAudioFileStored = {0};
             _currentFilePacketsNumber = (metadata->fileSize / dataSize) + ((metadata->fileSize % dataSize) ? 1 : 0);
             _currentFileData = [NSMutableData dataWithLength:metadata->fileSize];
             _currentFilePackets = (Byte*)calloc(_currentFilePacketsNumber, sizeof(Byte));
+            _missingPacketsCount = 0;
+            _receivedPacketsCount = 0;
             _startTime = CACurrentMediaTime();
             
             [_currentPeripheral writeValue:[NSData dataWithBytes:&cmd length:sizeof(cmd)] forCharacteristic:_COMMAND_AUDIO_FILE_DISPOSITION type:CBCharacteristicWriteWithResponse];
@@ -788,6 +795,14 @@ static const AudioFileStored EmptyAudioFileStored = {0};
             ? _currentFileMetadata.fileSize - packet->packetNumber * maxDataSize
             : maxDataSize;
         [_currentFileData replaceBytesInRange:NSMakeRange(packet->packetNumber * maxDataSize, dataSize) withBytes:&packet->bytes];
+        
+        _receivedPacketsCount += 1;
+        
+        double currentProgress = (double)_receivedPacketsCount / (double)_currentFilePacketsNumber;
+        if (fabs(currentProgress - _progress) >= PROGRESS_LOG_DELTA || currentProgress == 1.0) {
+            _progress = currentProgress;
+            [self trace:@"Received %d%%", (int)(_progress * 100.0)];
+        }
     }
     else if (characteristic == _STATUS_AUDIO_FILE_SENT)
     {
@@ -806,18 +821,15 @@ static const AudioFileStored EmptyAudioFileStored = {0};
                 cmd.command = 0x01; // missing packet. TODO: add to constants
                 cmd.packetNumber = i;
                 
+                _missingPacketsCount += 1;
+                
                 break;
             }
         }
         
-        if (cmd.command == 0x00) {
-            [self trace:@"Received audio with File Index %d! Sending acknowledgment...", cmd.fileIndex];
-        } else if (cmd.command == 0x01) {
-            [self trace:@"Discovered missing packet %d! Asking to resend...", cmd.packetNumber];
-        }
-        
         [_currentPeripheral writeValue:[NSData dataWithBytes:&cmd length:sizeof(cmd)] forCharacteristic:_COMMAND_AUDIO_FILE_RECEIVED type:CBCharacteristicWriteWithResponse];
         
+        // handle file transfer completion
         if (cmd.command == 0x00) {
             NSDateComponents *components = [[NSDateComponents alloc] init];
             [components setYear:_currentFileMetadata.year + 2000];
@@ -840,11 +852,15 @@ static const AudioFileStored EmptyAudioFileStored = {0};
             
             [_currentFileData writeToFile:filePath atomically:YES];
             
-            [self trace:[NSString stringWithFormat:@"File saved to %@", fileName]];
-            [self trace:[NSString stringWithFormat:@"Transfer speed %d B/s", (int)(_currentFileMetadata.fileSize / (CACurrentMediaTime() - _startTime))]];
+            [self trace:@"Received audio with File Index %d!", cmd.fileIndex];
+            [self trace:@"File saved to %@", fileName];
+            
+            double missingPacketsRatio = _missingPacketsCount * 100.0 / _currentFilePacketsNumber;
+            [self trace:@"Transfer speed %d B/s, re-sent %d packets out of %d (%.2f%%)",
+                (int)(_currentFileMetadata.fileSize / (CACurrentMediaTime() - _startTime)),
+                _missingPacketsCount, _currentFilePacketsNumber, missingPacketsRatio];
             
             // notify subscribers about new file appearence
-            [self trace:@"Broadcasting about received file"];
             [[NSNotificationCenter defaultCenter] postNotificationName:kTapNtfn
                                                                 object:nil
                                                               userInfo:@{ kTapNtfnType: @kTapNtfnTypeFile, kTapNtfnFilePath: filePath, kTapNtfnMAC: _currentMAC }];
@@ -855,6 +871,8 @@ static const AudioFileStored EmptyAudioFileStored = {0};
             free(_currentFilePackets);
             _currentFilePackets = nil;
             _currentFilePacketsNumber = 0;
+            _missingPacketsCount = 0;
+            _receivedPacketsCount = 0;
             _startTime = 0;
         }
     }

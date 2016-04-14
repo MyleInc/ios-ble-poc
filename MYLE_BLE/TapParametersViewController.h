@@ -25,7 +25,11 @@
 
 @property (weak, nonatomic) IBOutlet UITextField *tfBATTERY_LEVEL;
 
-@property (weak, nonatomic) IBOutlet UITextView *tvUUID;
+@property (weak, nonatomic) IBOutlet UITextField *tfMac;
+
+@property (weak, nonatomic) IBOutlet UITextField *fwVersion;
+
+@property (weak, nonatomic) IBOutlet UITextField *hwVersion;
 
 @property (weak, nonatomic) IBOutlet UIScrollView *scrollView;
 
@@ -38,7 +42,5 @@
 - (IBAction)clickDisconnect:(id)sender;
 
 - (IBAction)clickLocate:(id)sender;
-@property (weak, nonatomic) IBOutlet UITextField *fwVersion;
-@property (weak, nonatomic) IBOutlet UITextField *hwVersion;
 
 @end

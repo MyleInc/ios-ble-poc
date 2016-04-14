@@ -38,6 +38,7 @@
     self.tfBATTERY_LEVEL.enabled = NO;
     self.fwVersion.enabled = NO;
     self.hwVersion.enabled = NO;
+    self.tfMac.enabled = NO;
 }
 
 
@@ -76,7 +77,7 @@
         return [alert show];
     }
     
-    self.tvUUID.text = [_tap getCurrentTapUUID];
+    self.tfMac.text = [_tap getCurrentTapMAC];
     
     [_tap sendReadRECLN];
     [_tap sendReadMIC];
@@ -87,9 +88,6 @@
     [_tap sendReadBATTERY_LEVEL];
     [_tap sendReadFirmwareVersion];
     [_tap sendReadHardwareVersion];
-    
-    // get current password
-    //self.tfPASSWORD.text = [_tap getCurrentTapPassword];
 }
 
 - (IBAction)writeAll:(id)sender {
